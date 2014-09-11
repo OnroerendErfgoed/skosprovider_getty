@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import rdflib
+import requests
 from skosprovider.providers import VocabularyProvider
 
 import logging
@@ -61,11 +62,94 @@ class GettyProvider(VocabularyProvider):
 
 
     def find(self, query):
+        '''Find concepts that match a certain query.
+
+        Currently query is expected to be a dict, so that complex queries can
+        be passed. You can use this dict to search for concepts or collections
+        with a certain label, with a certain type and for concepts that belong
+        to a certain collection.
+
+        .. code-block:: python
+
+            # Find anything that has a label of church.
+            provider.find({'label': 'church'}
+
+            # Find all concepts that are a part of collection 5.
+            provider.find({'type': 'concept', 'collection': {'id': 5})
+
+            # Find all concepts, collections or children of these
+            # that belong to collection 5.
+            provider.find({'collection': {'id': 5, 'depth': 'all'})
+
+        :param query: A dict that can be used to express a query. The following
+            keys are permitted:
+
+            * `label`: Search for something with this label value. An empty \
+                label is equal to searching for all concepts.
+            * `type`: Limit the search to certain SKOS elements. If not \
+                present `all` is assumed:
+
+                * `concept`: Only return :class:`skosprovider.skos.Concept` \
+                    instances.
+                * `collection`: Only return \
+                    :class:`skosprovider.skos.Collection` instances.
+                * `all`: Return both :class:`skosprovider.skos.Concept` and \
+                    :class:`skosprovider.skos.Collection` instances.
+            * `collection`: Search only for concepts belonging to a certain \
+                collection. This argument should be a dict with two keys:
+
+                * `id`: The id of a collection. Required.
+                * `depth`: Can be `members` or `all`. Optional. If not \
+                    present, `members` is assumed, meaning only concepts or \
+                    collections that are a direct member of the collection \
+                    should be considered. When set to `all`, this method \
+                    should return concepts and collections that are a member \
+                    of the collection or are a narrower concept of a member \
+                    of the collection.
+
+        :returns: A :class:`lst` of concepts and collections. Each of these
+            is a dict with the following keys:
+
+            * id: id within the conceptscheme
+            * uri: :term:`uri` of the concept or collection
+            * type: concept or collection
+            * label: A label to represent the concept or collection. It is \
+                determined by looking at the `**kwargs` parameter, the default \
+                language of the provider and finally falls back to `en`.
+        '''
+        keywords = '"church* AND abbey*"'
+        data = {"query": """PREFIX luc: <http://www.ontotext.com/owlim/lucene#>
+        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+        PREFIX gvp: <http://vocab.getty.edu/ontology#>
+        PREFIX skosxl: <http://www.w3.org/2008/05/skos-xl#>
+        PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+        PREFIX dct: <http://purl.org/dc/terms/>
+        PREFIX gvp_lang: <http://vocab.getty.edu/language/>
+        PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+        SELECT ?Subject ?Term ?Parents ?ScopeNote ?Type {
+        ?Subject luc:term""" + keywords + """; a ?typ.
+        ?typ rdfs:subClassOf gvp:Subject; rdfs:label ?Type.
+        optional {?Subject gvp:prefLabelGVP [skosxl:literalForm ?Term]}
+        optional {?Subject gvp:parentStringAbbrev ?Parents}
+        optional {?Subject skos:scopeNote [dct:language gvp_lang:en; rdf:value ?ScopeNote]}}"""
+            # ,
+            #     "_implicit": False,
+            #     "implicit": True,
+            #     "_equivalent": False,
+            #     "_form": "/sparql"
+                }
+
+        # data = {
+        #     'query': 'SELECT * WHERE {?s ?p ?o} LIMIT 100'
+        # }
+        #&_implicit=false&implicit=true&_equivalent=false&_form=%2Fsparql
+        r = requests.get("http://vocab.getty.edu/sparql.json", params=data)
+
         warnings.warn(
         'This provider does not support this yet. It still in developement',
          UserWarning
         )
-        return False
+        return r
 
     def get_all(self):
         warnings.warn(

@@ -36,3 +36,7 @@ class GettyProviderTests(unittest.TestCase):
         concept = GettyProvider({'id': 'AAT'}, getty='aat').get_by_uri('http://vocab.getty.edu/aat/300007466')
         self.assertEqual(concept['uri'], 'http://vocab.getty.edu/aat/300007466')
         self.assertEqual(concept['id'], 300007466)
+
+    def test_find(self):
+        r = GettyProvider({'id': 'AAT'}, getty='aat').find(None)
+        self.assertEqual(r.status_code, 200)
