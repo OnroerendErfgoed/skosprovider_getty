@@ -16,13 +16,15 @@ log = logging.getLogger(__name__)
 from rdflib.namespace import RDF, SKOS, DC
 PROV = rdflib.Namespace('http://www.w3.org/ns/prov#')
 
+import re
+
 # todo repeating RDFProvider for skosprovider_rdf because problems with labels and notes
 
 def from_graph(graph):
     clist = []
     for sub, pred, obj in graph.triples((None, RDF.type, SKOS.Concept)):
         uri = str(sub)
-        con = Concept(uri, uri=uri)
+        con = Concept(int(re.findall('\d+', uri)[0]), uri=uri)
         con.broader = _create_from_subject_predicate(graph, sub, SKOS.broader)
         con.narrower = _create_from_subject_predicate(graph, sub, SKOS.narrower)
         con.related = _create_from_subject_predicate(graph, sub, SKOS.related)
@@ -32,9 +34,10 @@ def from_graph(graph):
 
     for sub, pred, obj in graph.triples((None, RDF.type, SKOS.Collection)):
         uri = str(sub)
-        col = Collection(uri, uri=uri)
+        col = Collection(int(re.findall('\d+', uri)[0]), uri=uri)
         col.members = _create_from_subject_predicate(graph, sub, SKOS.member)
         col.labels = _create_from_subject_typelist(graph, sub, Label.valid_types)
+        col.notes = _create_from_subject_typelist(graph, sub, Note.valid_types)
         clist.append(col)
     _fill_member_of(clist)
 
@@ -45,7 +48,7 @@ def _fill_member_of(clist):
     for col in collections:
         for c in clist:
              if c.id in col.members:
-                c.member_of.append(col.id)
+                c.member_of.append(int(re.findall('\d+', col.i)[0]))
                 break
 
 def _create_from_subject_typelist(graph, subject,typelist):
@@ -64,7 +67,7 @@ def _create_from_subject_predicate(graph, subject, predicate):
         elif Note.is_valid_type(type):
             o = _create_note(o, type)
         else:
-            o = o.encode('utf-8')
+            o = int(re.findall('\d+', o)[0])
         if o:
             list.append(o)
     return list
