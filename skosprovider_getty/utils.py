@@ -80,9 +80,7 @@ def _create_label(literal, type):
     language = literal.language
     if language is None:
         return None
-    else:
-        language.encode('utf-8')
-    return Label(literal.encode('utf-8'), type, language)
+    return Label(decode_literal(literal), type, language)
 
 def _create_note(uri, type):
 
@@ -102,17 +100,23 @@ def _create_note(uri, type):
 
         # for http://vocab.getty.edu/aat/rev/
         for s, p, o in note_graph.triples((uri, DC.type, None)):
-            note += o.encode('utf-8')
+            note += decode_literal(o)
         for s, p, o in note_graph.triples((uri, DC.description, None)):
-            note += ': %s' % o.encode('utf-8')
+            note += ': %s' % decode_literal(o)
         for s, p, o in note_graph.triples((uri, PROV.startedAtTime, None)):
-            note += ' at %s ' % o.encode('utf-8')
+            note += ' at %s ' % decode_literal(o)
 
         # http://vocab.getty.edu/aat/scopeNote
         for s, p, o in note_graph.triples((uri, RDF.value, None)):
-            note += o.encode('utf-8')
+            note += o
             language = o.language
 
         return Note(note, type, language)
     else:
         return None
+
+def decode_literal(literal):
+    if isinstance(literal, str):
+        return literal.encode('utf-8').decode('utf-8')
+    else:
+        return literal.encode('utf-8')
