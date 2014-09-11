@@ -38,5 +38,7 @@ class GettyProviderTests(unittest.TestCase):
         self.assertEqual(concept['id'], 300007466)
 
     def test_find(self):
-        r = GettyProvider({'id': 'AAT'}, getty='aat').find(None)
-        self.assertEqual(r.status_code, 200)
+        r = GettyProvider({'id': 'AAT'}, getty='aat').find({'label': 'church', 'type': 'concept', 'collection': '1'})
+        print r
+        self.assertIsInstance(r, list)
+        self.assertEquals(r.__len__(), 4)

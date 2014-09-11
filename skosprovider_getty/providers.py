@@ -117,6 +117,13 @@ class GettyProvider(VocabularyProvider):
                 determined by looking at the `**kwargs` parameter, the default \
                 language of the provider and finally falls back to `en`.
         '''
+
+        #todo interprete query parameters + which getty vocaulairy
+        label = query['label']
+        type = query['type']
+        collection = query['collection']
+
+        #todo build sparql query
         keywords = '"church* AND abbey*"'
         data = {"query": """PREFIX luc: <http://www.ontotext.com/owlim/lucene#>
         PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
@@ -132,24 +139,21 @@ class GettyProvider(VocabularyProvider):
         optional {?Subject gvp:prefLabelGVP [skosxl:literalForm ?Term]}
         optional {?Subject gvp:parentStringAbbrev ?Parents}
         optional {?Subject skos:scopeNote [dct:language gvp_lang:en; rdf:value ?ScopeNote]}}"""
-            # ,
-            #     "_implicit": False,
-            #     "implicit": True,
-            #     "_equivalent": False,
-            #     "_form": "/sparql"
                 }
 
-        # data = {
-        #     'query': 'SELECT * WHERE {?s ?p ?o} LIMIT 100'
-        # }
-        #&_implicit=false&implicit=true&_equivalent=false&_form=%2Fsparql
-        r = requests.get("http://vocab.getty.edu/sparql.json", params=data)
+        #send request to getty
+        r = requests.get("http://vocab.getty.edu/sparql.json", params=data).json()
 
-        warnings.warn(
-        'This provider does not support this yet. It still in developement',
-         UserWarning
-        )
-        return r
+        #todo build answer
+        answer = []
+        for result in r["results"]["bindings"]:
+            item = {'id': result["Subject"]["value"],
+                    'uri': result["Subject"]["value"],
+                    'type': type,
+                    'label': result["Term"]["value"]
+                    }
+            answer.append(item)
+        return answer
 
     def get_all(self):
         warnings.warn(
