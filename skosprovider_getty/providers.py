@@ -54,7 +54,7 @@ class GettyProvider(VocabularyProvider):
 
     def expand(self, id):
         warnings.warn(
-            'This provider currently does not support this yet. Still in developement',
+            'This provider does not support this yet. It still in developement',
              UserWarning
         )
         return False
@@ -62,21 +62,21 @@ class GettyProvider(VocabularyProvider):
 
     def find(self, query):
         warnings.warn(
-        'This provider currently does not support this yet. Still in developement',
+        'This provider does not support this yet. It still in developement',
          UserWarning
         )
         return False
 
     def get_all(self):
         warnings.warn(
-        'This provider currently does not support this yet. Still in developement',
+        'This provider does not support this yet. It still in developement',
          UserWarning
         )
         return False
 
     def get_top_concepts(self):
         warnings.warn(
-        'This provider currently does not support this yet. Still in developement',
+        'This provider does not support this yet. It still in developement',
          UserWarning
         )
         return False
