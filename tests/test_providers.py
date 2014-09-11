@@ -25,3 +25,5 @@ class GettyProviderTests(unittest.TestCase):
         self.assertGreater(len(altlabels_conc), 0)
         for label in altlabels:
             self.assertIn(label, altlabels_conc)
+
+        self.assertGreater(len(concept['notes']), 0)
