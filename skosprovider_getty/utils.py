@@ -18,6 +18,10 @@ PROV = rdflib.Namespace('http://www.w3.org/ns/prov#')
 
 import re
 
+# todo: default exclude change notes --> from_graph in class
+
+# todo: id not always int --> id_from_uri uri.strip('/').rsplit('/',1)[1]
+
 # todo repeating RDFProvider for skosprovider_rdf because problems with labels and notes
 
 def from_graph(graph):
@@ -68,7 +72,7 @@ def _create_from_subject_predicate(graph, subject, predicate, note_uris=None):
         elif Note.is_valid_type(type):
             if decode_literal(o) not in note_uris:
                 note_uris.append(decode_literal(o))
-                o = _create_note(o, type)
+                o = _create_note(graph, o, type)
             else:
                 o = None
         else:
@@ -87,31 +91,30 @@ def _create_label(literal, type):
         return None
     return Label(decode_literal(literal), type, language)
 
-def _create_note(uri, type):
+def _create_note(graph, uri, type):
 
     try:
-        note_graph = rdflib.Graph()
-        note_graph.parse('%s.rdf' % uri)
+
         note = ''
         language = 'en'
 
         # http://vocab.getty.edu/aat/scopeNote
-        for s, p, o in note_graph.triples((uri, RDF.value, None)):
+        for s, p, o in graph.triples((uri, RDF.value, None)):
             note += decode_literal(o)
             language = o.language
 
         # for http://vocab.getty.edu/aat/rev/
-        for s, p, o in note_graph.triples((uri, DC.type, None)):
+        for s, p, o in graph.triples((uri, DC.type, None)):
             note += decode_literal(o)
-        for s, p, o in note_graph.triples((uri, DC.description, None)):
+        for s, p, o in graph.triples((uri, DC.description, None)):
             note += ': %s' % decode_literal(o)
-        for s, p, o in note_graph.triples((uri, PROV.startedAtTime, None)):
+        for s, p, o in graph.triples((uri, PROV.startedAtTime, None)):
             note += ' at %s ' % decode_literal(o)
 
         return Note(note, type, language)
 
-    # for python2.7 is this urllib2.HTTPError
-    # for python3 is this urllib.error.HTTPError
+    # for python2.7 this is urllib2.HTTPError
+    # for python3 this is urllib.error.HTTPError
     except Exception as err:
         if hasattr(err, 'code'):
             if err.code == 404:

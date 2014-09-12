@@ -15,6 +15,7 @@ from skosprovider_getty.utils import (
     from_graph
 )
 
+#todo: ATT en TGN with different constructors who overwrite the GettyProvider
 
 
 
@@ -57,8 +58,8 @@ class GettyProvider(VocabularyProvider):
             concept = graph_to_skos[0]
             return concept
 
-        # for python2.7 is this urllib2.HTTPError
-        # for python3 is this urllib.error.HTTPError
+        # for python2.7 this is urllib2.HTTPError
+        # for python3 this is urllib.error.HTTPError
         except Exception as err:
             if hasattr(err, 'code'):
                 if err.code == 404:
