@@ -3,21 +3,26 @@
 
 import rdflib
 import requests
-from skosprovider.providers import VocabularyProvider
+import warnings
+import re
 
 import logging
 log = logging.getLogger(__name__)
+
+from skosprovider.providers import VocabularyProvider
 
 from skosprovider_getty.utils import (
     from_graph
 )
 
-import warnings
 
-import re
 
 
 class GettyProvider(VocabularyProvider):
+    '''A provider that can work with the GETTY rdf files of
+    http://vocab.getty.edu/
+
+    '''
 
     def __init__(self, metadata, **kwargs):
         if not 'default_language' in metadata:
@@ -37,17 +42,38 @@ class GettyProvider(VocabularyProvider):
 
         super(GettyProvider, self).__init__(metadata, **kwargs)
 
-    def get_by_id(self, id):
+    def get_by_id(self, id, include_revision_notes=False):
+        """ Get a :class:`skosprovider.skos.Concept` or :class:`skosprovider.skos.Collection` by id
 
+        :param (int) id: integer id of the :class:`skosprovider.skos.Concept` or :class:`skosprovider.skos.Concept`
+        :return: corresponding :class:`skosprovider.skos.Concept` or :class:`skosprovider.skos.Concept`.
+            Returns None if non-existing id
+        """
         graph = rdflib.Graph()
-        graph.parse('%s/%s.rdf' % (self.url, id))
-        # get the concept
-        graph_to_skos = from_graph(graph)
-        concept = graph_to_skos[0]
+        try:
+            graph.parse('%s/%s.rdf' % (self.url, id))
+            # get the concept
+            graph_to_skos = from_graph(graph)
+            concept = graph_to_skos[0]
+            return concept
 
-        return concept
+        # for python2.7 is this urllib2.HTTPError
+        # for python3 is this urllib.error.HTTPError
+        except Exception as err:
+            if hasattr(err, 'code'):
+                if err.code == 404:
+                    return None
+            else:
+                raise
+
 
     def get_by_uri(self, uri):
+        """ Get a :class:`skosprovider.skos.Concept` or :class:`skosprovider.skos.Collection` by uri
+
+        :param (str) uri: string uri of the :class:`skosprovider.skos.Concept` or :class:`skosprovider.skos.Concept`
+        :return: corresponding :class:`skosprovider.skos.Concept` or :class:`skosprovider.skos.Concept`.
+            Returns None if non-existing id
+        """
 
         id = int(re.findall('\d+', uri)[0])
 

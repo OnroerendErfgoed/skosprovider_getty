@@ -29,7 +29,7 @@ def from_graph(graph):
         con.narrower = _create_from_subject_predicate(graph, sub, SKOS.narrower)
         con.related = _create_from_subject_predicate(graph, sub, SKOS.related)
         con.labels = _create_from_subject_typelist(graph, sub, Label.valid_types)
-        con.notes = _create_from_subject_typelist(graph, sub, Note.valid_types)
+        con.notes = _create_from_subject_typelist(graph, sub, hierarchy_notetypes(Note.valid_types))
         clist.append(con)
 
     for sub, pred, obj in graph.triples((None, RDF.type, SKOS.Collection)):
@@ -37,7 +37,7 @@ def from_graph(graph):
         col = Collection(int(re.findall('\d+', uri)[0]), uri=uri)
         col.members = _create_from_subject_predicate(graph, sub, SKOS.member)
         col.labels = _create_from_subject_typelist(graph, sub, Label.valid_types)
-        col.notes = _create_from_subject_typelist(graph, sub, Note.valid_types)
+        col.notes = _create_from_subject_typelist(graph, sub, hierarchy_notetypes(Note.valid_types))
         clist.append(col)
     _fill_member_of(clist)
 
@@ -53,19 +53,24 @@ def _fill_member_of(clist):
 
 def _create_from_subject_typelist(graph, subject,typelist):
     list=[]
+    note_uris = []
     for p in typelist:
         term=SKOS.term(p)
-        list.extend(_create_from_subject_predicate(graph, subject,term))
+        list.extend(_create_from_subject_predicate(graph, subject, term, note_uris))
     return list
 
-def _create_from_subject_predicate(graph, subject, predicate):
+def _create_from_subject_predicate(graph, subject, predicate, note_uris=None):
     list = []
     for s, p, o in graph.triples((subject, predicate, None)):
         type = predicate.split('#')[-1]
         if Label.is_valid_type(type):
             o = _create_label(o, type)
         elif Note.is_valid_type(type):
-            o = _create_note(o, type)
+            if decode_literal(o) not in note_uris:
+                note_uris.append(decode_literal(o))
+                o = _create_note(o, type)
+            else:
+                o = None
         else:
             o = int(re.findall('\d+', o)[0])
         if o:
@@ -84,19 +89,16 @@ def _create_label(literal, type):
 
 def _create_note(uri, type):
 
-    note_graph = None
-
     try:
-
         note_graph = rdflib.Graph()
         note_graph.parse('%s.rdf' % uri)
-
-    except:
-        log.debug('Parse error for %s, probably no records found' % uri)
-
-    if note_graph:
         note = ''
         language = 'en'
+
+        # http://vocab.getty.edu/aat/scopeNote
+        for s, p, o in note_graph.triples((uri, RDF.value, None)):
+            note += decode_literal(o)
+            language = o.language
 
         # for http://vocab.getty.edu/aat/rev/
         for s, p, o in note_graph.triples((uri, DC.type, None)):
@@ -106,17 +108,30 @@ def _create_note(uri, type):
         for s, p, o in note_graph.triples((uri, PROV.startedAtTime, None)):
             note += ' at %s ' % decode_literal(o)
 
-        # http://vocab.getty.edu/aat/scopeNote
-        for s, p, o in note_graph.triples((uri, RDF.value, None)):
-            note += decode_literal(o)
-            language = o.language
-
         return Note(note, type, language)
-    else:
-        return None
+
+    # for python2.7 is this urllib2.HTTPError
+    # for python3 is this urllib.error.HTTPError
+    except Exception as err:
+        if hasattr(err, 'code'):
+            if err.code == 404:
+                return None
+        else:
+            raise
 
 def decode_literal(literal):
+    # the literals are of different type in python 2.7 and python 3
     if isinstance(literal, str):
         return literal.encode('utf-8').decode('utf-8')
     else:
         return literal.encode('utf-8')
+
+def hierarchy_notetypes(list):
+    # A getty scopeNote wil be of type skos.note and skos.scopeNote
+    # To avoid doubles and to make sure the the getty scopeNote will have type skos.scopeNote and not skos.note,
+    # the skos.note will be added at the end of the list
+    index_note = list.index('note')
+    if index_note != -1:
+        list.pop(index_note)
+        list.append('note')
+    return list
