@@ -28,9 +28,9 @@ class GettyProviderTests(unittest.TestCase):
 
         self.assertGreater(len(concept['notes']), 0)
 
-        self.assertEqual(concept['id'], 300007466)
-        self.assertEqual(concept['broader'][0], 300007391)
-        self.assertIn(300312247, concept['related'])
+        self.assertEqual(concept['id'], '300007466')
+        self.assertEqual(concept['broader'][0], '300007391')
+        self.assertIn('300312247', concept['related'])
 
     def test_get_by_id_invalid(self):
         concept = GettyProvider({'id': 'AAT'}, getty='aat').get_by_id(123)
@@ -39,7 +39,7 @@ class GettyProviderTests(unittest.TestCase):
     def test_get_by_uri(self):
         concept = GettyProvider({'id': 'AAT'}, getty='aat').get_by_uri('http://vocab.getty.edu/aat/300007466')
         self.assertEqual(concept['uri'], 'http://vocab.getty.edu/aat/300007466')
-        self.assertEqual(concept['id'], 300007466)
+        self.assertEqual(concept['id'], '300007466')
 
 
     def test_get_by_id_tgn(self):

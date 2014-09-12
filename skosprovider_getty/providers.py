@@ -12,7 +12,8 @@ log = logging.getLogger(__name__)
 from skosprovider.providers import VocabularyProvider
 
 from skosprovider_getty.utils import (
-    from_graph
+    from_graph,
+    uri_to_id
 )
 
 #todo: ATT en TGN with different constructors who overwrite the GettyProvider
@@ -76,7 +77,7 @@ class GettyProvider(VocabularyProvider):
             Returns None if non-existing id
         """
 
-        id = int(re.findall('\d+', uri)[0])
+        id = uri_to_id(uri)
 
         return self.get_by_id(id)
 

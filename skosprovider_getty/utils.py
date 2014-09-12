@@ -20,15 +20,11 @@ import re
 
 # todo: default exclude change notes --> from_graph in class
 
-# todo: id not always int --> id_from_uri uri.strip('/').rsplit('/',1)[1]
-
-# todo repeating RDFProvider for skosprovider_rdf because problems with labels and notes
-
 def from_graph(graph):
     clist = []
     for sub, pred, obj in graph.triples((None, RDF.type, SKOS.Concept)):
         uri = str(sub)
-        con = Concept(int(re.findall('\d+', uri)[0]), uri=uri)
+        con = Concept(uri_to_id(uri), uri=uri)
         con.broader = _create_from_subject_predicate(graph, sub, SKOS.broader)
         con.narrower = _create_from_subject_predicate(graph, sub, SKOS.narrower)
         con.related = _create_from_subject_predicate(graph, sub, SKOS.related)
@@ -38,7 +34,7 @@ def from_graph(graph):
 
     for sub, pred, obj in graph.triples((None, RDF.type, SKOS.Collection)):
         uri = str(sub)
-        col = Collection(int(re.findall('\d+', uri)[0]), uri=uri)
+        col = Collection(uri_to_id(uri), uri=uri)
         col.members = _create_from_subject_predicate(graph, sub, SKOS.member)
         col.labels = _create_from_subject_typelist(graph, sub, Label.valid_types)
         col.notes = _create_from_subject_typelist(graph, sub, hierarchy_notetypes(Note.valid_types))
@@ -52,7 +48,7 @@ def _fill_member_of(clist):
     for col in collections:
         for c in clist:
              if c.id in col.members:
-                c.member_of.append(int(re.findall('\d+', col.i)[0]))
+                c.member_of.append(uri_to_id(col.id))
                 break
 
 def _create_from_subject_typelist(graph, subject,typelist):
@@ -76,7 +72,7 @@ def _create_from_subject_predicate(graph, subject, predicate, note_uris=None):
             else:
                 o = None
         else:
-            o = int(re.findall('\d+', o)[0])
+            o = uri_to_id(o)
         if o:
             list.append(o)
     return list
@@ -138,3 +134,7 @@ def hierarchy_notetypes(list):
         list.pop(index_note)
         list.append('note')
     return list
+
+def uri_to_id(uri):
+
+    return uri.strip('/').rsplit('/',1)[1]
