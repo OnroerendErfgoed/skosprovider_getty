@@ -7,7 +7,7 @@ import unittest
 class GettyProviderTests(unittest.TestCase):
 
     def test_get_by_id_concept(self):
-        concept = GettyProvider({'id': 'AAT'}, getty='aat').get_by_id(300007466)
+        concept = GettyProvider({'id': 'AAT'}, getty='aat').get_by_id(300007466, change_notes=True)
         self.assertEqual(concept['uri'], 'http://vocab.getty.edu/aat/300007466')
         self.assertEqual(concept['type'], 'concept')
         self.assertIsInstance(concept['labels'], list)

@@ -4,7 +4,6 @@
 import rdflib
 import requests
 import warnings
-import re
 
 import logging
 log = logging.getLogger(__name__)
@@ -12,7 +11,7 @@ log = logging.getLogger(__name__)
 from skosprovider.providers import VocabularyProvider
 
 from skosprovider_getty.utils import (
-    from_graph,
+    getty_to_skos,
     uri_to_id
 )
 
@@ -44,7 +43,7 @@ class GettyProvider(VocabularyProvider):
 
         super(GettyProvider, self).__init__(metadata, **kwargs)
 
-    def get_by_id(self, id, include_revision_notes=False):
+    def get_by_id(self, id, change_notes=False):
         """ Get a :class:`skosprovider.skos.Concept` or :class:`skosprovider.skos.Collection` by id
 
         :param (int) id: integer id of the :class:`skosprovider.skos.Concept` or :class:`skosprovider.skos.Concept`
@@ -55,7 +54,7 @@ class GettyProvider(VocabularyProvider):
         try:
             graph.parse('%s/%s.rdf' % (self.url, id))
             # get the concept
-            graph_to_skos = from_graph(graph)
+            graph_to_skos = getty_to_skos(graph, change_notes).from_graph()
             concept = graph_to_skos[0]
             return concept
 
@@ -69,7 +68,7 @@ class GettyProvider(VocabularyProvider):
                 raise
 
 
-    def get_by_uri(self, uri):
+    def get_by_uri(self, uri, change_notes=False):
         """ Get a :class:`skosprovider.skos.Concept` or :class:`skosprovider.skos.Collection` by uri
 
         :param (str) uri: string uri of the :class:`skosprovider.skos.Concept` or :class:`skosprovider.skos.Concept`
@@ -79,7 +78,7 @@ class GettyProvider(VocabularyProvider):
 
         id = uri_to_id(uri)
 
-        return self.get_by_id(id)
+        return self.get_by_id(id, change_notes)
 
     def expand(self, id):
         warnings.warn(

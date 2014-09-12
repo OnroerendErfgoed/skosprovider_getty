@@ -16,107 +16,101 @@ log = logging.getLogger(__name__)
 from rdflib.namespace import RDF, SKOS, DC
 PROV = rdflib.Namespace('http://www.w3.org/ns/prov#')
 
-import re
+class getty_to_skos():
 
-# todo: default exclude change notes --> from_graph in class
+    def __init__(self, graph, change_notes=False):
+        self.graph = graph
+        self.change_notes = change_notes
 
-def from_graph(graph):
-    clist = []
-    for sub, pred, obj in graph.triples((None, RDF.type, SKOS.Concept)):
-        uri = str(sub)
-        con = Concept(uri_to_id(uri), uri=uri)
-        con.broader = _create_from_subject_predicate(graph, sub, SKOS.broader)
-        con.narrower = _create_from_subject_predicate(graph, sub, SKOS.narrower)
-        con.related = _create_from_subject_predicate(graph, sub, SKOS.related)
-        con.labels = _create_from_subject_typelist(graph, sub, Label.valid_types)
-        con.notes = _create_from_subject_typelist(graph, sub, hierarchy_notetypes(Note.valid_types))
-        clist.append(con)
+    def from_graph(self):
+        clist = []
+        for sub, pred, obj in self.graph.triples((None, RDF.type, SKOS.Concept)):
+            uri = str(sub)
+            con = Concept(uri_to_id(uri), uri=uri)
+            con.broader = self._create_from_subject_predicate(sub, SKOS.broader)
+            con.narrower = self._create_from_subject_predicate(sub, SKOS.narrower)
+            con.related = self._create_from_subject_predicate(sub, SKOS.related)
+            con.labels = self._create_from_subject_typelist(sub, Label.valid_types)
+            con.notes = self._create_from_subject_typelist(sub, hierarchy_notetypes(Note.valid_types))
+            clist.append(con)
 
-    for sub, pred, obj in graph.triples((None, RDF.type, SKOS.Collection)):
-        uri = str(sub)
-        col = Collection(uri_to_id(uri), uri=uri)
-        col.members = _create_from_subject_predicate(graph, sub, SKOS.member)
-        col.labels = _create_from_subject_typelist(graph, sub, Label.valid_types)
-        col.notes = _create_from_subject_typelist(graph, sub, hierarchy_notetypes(Note.valid_types))
-        clist.append(col)
-    _fill_member_of(clist)
+        for sub, pred, obj in self.graph.triples((None, RDF.type, SKOS.Collection)):
+            uri = str(sub)
+            col = Collection(uri_to_id(uri), uri=uri)
+            col.members = self._create_from_subject_predicate(sub, SKOS.member)
+            col.labels = self._create_from_subject_typelist(sub, Label.valid_types)
+            col.notes = self._create_from_subject_typelist(sub, hierarchy_notetypes(Note.valid_types))
+            clist.append(col)
 
-    return clist
+        return clist
 
-def _fill_member_of(clist):
-    collections = list(set([c for c in clist if isinstance(c, Collection)]))
-    for col in collections:
-        for c in clist:
-             if c.id in col.members:
-                c.member_of.append(uri_to_id(col.id))
-                break
+    def _create_from_subject_typelist(self, subject,typelist):
+        list=[]
+        note_uris = []
+        for p in typelist:
+            term = SKOS.term(p)
+            list.extend(self._create_from_subject_predicate(subject, term, note_uris))
+        return list
 
-def _create_from_subject_typelist(graph, subject,typelist):
-    list=[]
-    note_uris = []
-    for p in typelist:
-        term=SKOS.term(p)
-        list.extend(_create_from_subject_predicate(graph, subject, term, note_uris))
-    return list
-
-def _create_from_subject_predicate(graph, subject, predicate, note_uris=None):
-    list = []
-    for s, p, o in graph.triples((subject, predicate, None)):
-        type = predicate.split('#')[-1]
-        if Label.is_valid_type(type):
-            o = _create_label(o, type)
-        elif Note.is_valid_type(type):
-            if decode_literal(o) not in note_uris:
-                note_uris.append(decode_literal(o))
-                o = _create_note(graph, o, type)
+    def _create_from_subject_predicate(self, subject, predicate, note_uris=None):
+        list = []
+        for s, p, o in self.graph.triples((subject, predicate, None)):
+            type = predicate.split('#')[-1]
+            if Label.is_valid_type(type):
+                o = self._create_label(o, type)
+            elif Note.is_valid_type(type):
+                if decode_literal(o) not in note_uris:
+                    note_uris.append(decode_literal(o))
+                    o = self._create_note(o, type)
+                else:
+                    o = None
             else:
-                o = None
-        else:
-            o = uri_to_id(o)
-        if o:
-            list.append(o)
-    return list
+                o = uri_to_id(o)
+            if o:
+                list.append(o)
+        return list
 
-def _create_label(literal, type):
-    if not Label.is_valid_type(type):
-        raise ValueError(
-            'Type of Label is not valid.'
-        )
-    language = literal.language
-    if language is None:
-        return None
-    return Label(decode_literal(literal), type, language)
+    def _create_label(self, literal, type):
+        if not Label.is_valid_type(type):
+            raise ValueError(
+                'Type of Label is not valid.'
+            )
+        language = literal.language
+        if language is None:
+            return None
+        return Label(decode_literal(literal), type, language)
 
-def _create_note(graph, uri, type):
+    def _create_note(self, uri, type):
 
-    try:
+        try:
 
-        note = ''
-        language = 'en'
+            note = ''
+            language = 'en'
 
-        # http://vocab.getty.edu/aat/scopeNote
-        for s, p, o in graph.triples((uri, RDF.value, None)):
-            note += decode_literal(o)
-            language = o.language
+            # http://vocab.getty.edu/aat/scopeNote
+            for s, p, o in self.graph.triples((uri, RDF.value, None)):
+                note += decode_literal(o)
+                language = o.language
 
-        # for http://vocab.getty.edu/aat/rev/
-        for s, p, o in graph.triples((uri, DC.type, None)):
-            note += decode_literal(o)
-        for s, p, o in graph.triples((uri, DC.description, None)):
-            note += ': %s' % decode_literal(o)
-        for s, p, o in graph.triples((uri, PROV.startedAtTime, None)):
-            note += ' at %s ' % decode_literal(o)
+            if self.change_notes:
+                # for http://vocab.getty.edu/aat/rev/
+                for s, p, o in self.graph.triples((uri, DC.type, None)):
+                    note += decode_literal(o)
+                for s, p, o in self.graph.triples((uri, DC.description, None)):
+                    note += ': %s' % decode_literal(o)
+                for s, p, o in self.graph.triples((uri, PROV.startedAtTime, None)):
+                    note += ' at %s ' % decode_literal(o)
 
-        return Note(note, type, language)
+            return Note(note, type, language)
 
-    # for python2.7 this is urllib2.HTTPError
-    # for python3 this is urllib.error.HTTPError
-    except Exception as err:
-        if hasattr(err, 'code'):
-            if err.code == 404:
-                return None
-        else:
-            raise
+        # for python2.7 this is urllib2.HTTPError
+        # for python3 this is urllib.error.HTTPError
+        except Exception as err:
+            if hasattr(err, 'code'):
+                if err.code == 404:
+                    return None
+            else:
+                raise
 
 def decode_literal(literal):
     # the literals are of different type in python 2.7 and python 3
@@ -136,5 +130,4 @@ def hierarchy_notetypes(list):
     return list
 
 def uri_to_id(uri):
-
     return uri.strip('/').rsplit('/',1)[1]
