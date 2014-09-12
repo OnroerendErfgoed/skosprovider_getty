@@ -1,13 +1,16 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-from skosprovider_getty.providers import GettyProvider
+from skosprovider_getty.providers import (
+    ATTProvider,
+    TGNProvider
+)
 import unittest
 
 class GettyProviderTests(unittest.TestCase):
 
     def test_get_by_id_concept(self):
-        concept = GettyProvider({'id': 'AAT'}, getty='aat').get_by_id(300007466, change_notes=True)
+        concept = ATTProvider({'id': 'AAT'}).get_by_id(300007466, change_notes=True)
         self.assertEqual(concept['uri'], 'http://vocab.getty.edu/aat/300007466')
         self.assertEqual(concept['type'], 'concept')
         self.assertIsInstance(concept['labels'], list)
@@ -33,44 +36,44 @@ class GettyProviderTests(unittest.TestCase):
         self.assertIn('300312247', concept['related'])
 
     def test_get_by_id_invalid(self):
-        concept = GettyProvider({'id': 'AAT'}, getty='aat').get_by_id(123)
+        concept = ATTProvider({'id': 'AAT'}).get_by_id(123)
         self.assertIsNone(concept)
 
     def test_get_by_uri(self):
-        concept = GettyProvider({'id': 'AAT'}, getty='aat').get_by_uri('http://vocab.getty.edu/aat/300007466')
+        concept = ATTProvider({'id': 'AAT'}).get_by_uri('http://vocab.getty.edu/aat/300007466')
         self.assertEqual(concept['uri'], 'http://vocab.getty.edu/aat/300007466')
         self.assertEqual(concept['id'], '300007466')
 
 
     def test_get_by_id_tgn(self):
-        concept = GettyProvider({'id': 'AAT'}, getty='tgn').get_by_id(1000063)
+        concept = TGNProvider({'id': 'TGN'}).get_by_id(1000063)
         self.assertEqual(concept['uri'], 'http://vocab.getty.edu/tgn/1000063')
         self.assertIn('België', [label['label'] for label in concept['labels'] if label['language'] == 'nl' and label['type'] == 'prefLabel'])
 
     def test_find_concepts_in_collection(self):
-        r = GettyProvider({'id': 'AAT'}, getty='aat').find({'label': 'church', 'type': 'concept', 'collection': {'id': '300007466', 'depth': 'all'}})
+        r = ATTProvider({'id': 'AAT'}).find({'label': 'church', 'type': 'concept', 'collection': {'id': '300007466', 'depth': 'all'}})
         self.assertIsInstance(r, list)
         # self.assertEquals(len(r), 26)
-        print len(r)
-        print r
+        print(len(r))
+        print(r)
 
     def test_find_member_concepts_in_collection(self):
-        r = GettyProvider({'id': 'AAT'}, getty='aat').find({'label': 'church', 'type': 'concept', 'collection': {'id': '300007494', 'depth': 'members'}})
+        r = ATTProvider({'id': 'AAT'}).find({'label': 'church', 'type': 'concept', 'collection': {'id': '300007494', 'depth': 'members'}})
         self.assertIsInstance(r, list)
         # self.assertEquals(len(r), 14)
-        print len(r)
-        print r
+        print(len(r))
+        print(r)
 
     def test_find_collections_in_collection(self):
-        r = GettyProvider({'id': 'AAT'}, getty='aat').find({'label': 'church', 'type': 'collection', 'collection': {'id': '300007466', 'depth': 'all'}})
+        r = ATTProvider({'id': 'AAT'}).find({'label': 'church', 'type': 'collection', 'collection': {'id': '300007466', 'depth': 'all'}})
         self.assertIsInstance(r, list)
         # self.assertEquals(len(r), 6)
-        print len(r)
-        print r
+        print(len(r))
+        print(r)
 
     def test_find_member_collections_in_collection(self):
-        r = GettyProvider({'id': 'AAT'}, getty='aat').find({'label': 'church', 'type': 'collection', 'collection': {'id': '300007466', 'depth': 'members'}})
+        r = ATTProvider({'id': 'AAT'}).find({'label': 'church', 'type': 'collection', 'collection': {'id': '300007466', 'depth': 'members'}})
         self.assertIsInstance(r, list)
         # self.assertEquals(len(r), 6)
-        print len(r)
-        print r
+        print(len(r))
+        print(r)

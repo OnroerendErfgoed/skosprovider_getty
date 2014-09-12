@@ -16,8 +16,6 @@ from skosprovider_getty.utils import (
     uri_to_id
 )
 
-#todo: ATT en TGN with different constructors who overwrite the GettyProvider
-
 def _build_keywords(label):
     keyword_list = label.split(" ")
     keywords = ""
@@ -62,7 +60,7 @@ def _build_sparql(getty, keywords, type_c, coll_id, coll_depth):
         """ + type_x + """
         optional {?Subject gvp:prefLabelGVP [skosxl:literalForm ?Term]}}
         """
-    print query
+    print(query)
     return query
 
 
@@ -78,7 +76,7 @@ class GettyProvider(VocabularyProvider):
             self.base_url = kwargs['base_url']
         else:
             self.base_url = 'http://vocab.getty.edu/'
-            print self.base_url
+            print(self.base_url)
         if 'getty' in kwargs:
             self.getty = kwargs['getty']
         else:
@@ -184,7 +182,7 @@ class GettyProvider(VocabularyProvider):
 
     def get_all(self):
         warnings.warn(
-            'This provider does not support this yet. It still in development',
+            'This provider does not support this. The amount of results is too large',
             UserWarning
         )
         return False
@@ -195,3 +193,23 @@ class GettyProvider(VocabularyProvider):
             UserWarning
         )
         return False
+
+class ATTProvider(GettyProvider):
+    """ The Art & Architecture Thesaurus Provider
+    A provider that can work with the GETTY ATT rdf files of
+    http://vocab.getty.edu/att
+    """
+    def __init__(self, metadata):
+        """ Inherit functions of the getty provider using url http://vocab.getty.edu/att
+        """
+        GettyProvider.__init__(self, metadata, getty='aat')
+
+class TGNProvider(GettyProvider):
+    """ The Getty Thesaurus of Geographic Names
+    A provider that can work with the GETTY GNT rdf files of
+    http://vocab.getty.edu/tgn
+    """
+    def __init__(self, metadata):
+        """ Inherit functions of the getty provider using url http://vocab.getty.edu/tgn
+        """
+        GettyProvider.__init__(self, metadata, getty='tgn')
