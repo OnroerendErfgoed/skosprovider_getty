@@ -37,7 +37,14 @@ class GettyProviderTests(unittest.TestCase):
         self.assertEqual(concept['uri'], 'http://vocab.getty.edu/aat/300007466')
         self.assertEqual(concept['id'], 300007466)
 
+
     def test_get_by_id_tgn(self):
         concept = GettyProvider({'id': 'AAT'}, getty='tgn').get_by_id(1000063)
         self.assertEqual(concept['uri'], 'http://vocab.getty.edu/tgn/1000063')
         self.assertIn('België', [label['label'] for label in concept['labels'] if label['language'] == 'nl' and label['type'] == 'prefLabel'])
+
+    def test_find(self):
+        r = GettyProvider({'id': 'AAT'}, getty='aat').find({'label': 'church', 'type': 'concept', 'collection': '1'})
+        print(r)
+        self.assertIsInstance(r, list)
+        self.assertEquals(r.__len__(), 4)
