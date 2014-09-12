@@ -108,7 +108,7 @@ def _create_note(uri, type):
 
         # http://vocab.getty.edu/aat/scopeNote
         for s, p, o in note_graph.triples((uri, RDF.value, None)):
-            note += o
+            note += decode_literal(o)
             language = o.language
 
         return Note(note, type, language)
