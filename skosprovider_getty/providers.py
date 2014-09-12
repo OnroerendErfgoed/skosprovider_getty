@@ -6,6 +6,7 @@ import requests
 import warnings
 
 import logging
+
 log = logging.getLogger(__name__)
 
 from skosprovider.providers import VocabularyProvider
@@ -17,6 +18,52 @@ from skosprovider_getty.utils import (
 
 #todo: ATT en TGN with different constructors who overwrite the GettyProvider
 
+def _build_keywords(label):
+    keyword_list = label.split(" ")
+    keywords = ""
+    for idx, item in enumerate(keyword_list):
+        if idx + 1 == len(keyword_list):
+            keywords = keywords + item
+        else:
+            keywords = keywords + item + " AND "
+
+    return "'" + keywords + "'"
+
+def _build_sparql(getty, keywords, type_c, coll_id, coll_depth):
+    getty += ":"
+    keywords_x = "luc:term " + keywords
+    getty_x = "skos:inScheme " + getty
+    if coll_id is None:
+        coll_x = ""
+    else:
+        if coll_depth == 'all':
+            coll_x = "gvp:broaderExtended " + getty + coll_id
+        elif coll_depth == 'members':
+            coll_x = "gvp:broader " + getty + coll_id
+
+    if type_c == 'all':
+        type_x = "{?Type rdfs:subClassOf skos:Concept} UNION {?Type rdfs:subClassOf skos:Collection}"
+    elif type_c == 'concept':
+        type_x = "{?Type rdfs:subClassOf skos:Concept}"
+    elif type_c == 'collection':
+        type_x = "{?Type rdfs:subClassOf skos:Collection}"
+
+    query = """
+        PREFIX luc: <http://www.ontotext.com/owlim/lucene#>
+        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+        PREFIX gvp: <http://vocab.getty.edu/ontology#>
+        PREFIX skosxl: <http://www.w3.org/2008/05/skos-xl#>
+        PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+        PREFIX dct: <http://purl.org/dc/terms/>
+        PREFIX gvp_lang: <http://vocab.getty.edu/language/>
+        PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+        SELECT ?Subject ?Term ?Type ?Id {
+        ?Subject rdf:type ?Type; dc:identifier ?Id; """ + keywords_x + """; """ + getty_x + """; """ + coll_x + """;.
+        """ + type_x + """
+        optional {?Subject gvp:prefLabelGVP [skosxl:literalForm ?Term]}}
+        """
+    print query
+    return query
 
 
 class GettyProvider(VocabularyProvider):
@@ -24,20 +71,20 @@ class GettyProvider(VocabularyProvider):
     http://vocab.getty.edu/
 
     '''
-
     def __init__(self, metadata, **kwargs):
         if not 'default_language' in metadata:
             metadata['default_language'] = 'en'
         if 'base_url' in kwargs:
             self.base_url = kwargs['base_url']
         else:
-            self.base_url = 'http://vocab.getty.edu/%s'
+            self.base_url = 'http://vocab.getty.edu/'
+            print self.base_url
         if 'getty' in kwargs:
             self.getty = kwargs['getty']
         else:
             self.getty = 'att'
         if not 'url' in kwargs:
-            self.url = self.base_url % self.getty
+            self.url = self.base_url + self.getty
         else:
             self.url = kwargs['url']
 
@@ -82,116 +129,69 @@ class GettyProvider(VocabularyProvider):
 
     def expand(self, id):
         warnings.warn(
-            'This provider does not support this yet. It still in developement',
-             UserWarning
+            'This provider does not support this yet. It still in development',
+            UserWarning
         )
         return False
 
 
     def find(self, query):
-        '''Find concepts that match a certain query.
+        ##  interprete and validate query parameters (label, type and collection)
+        #Label
+        if 'label' in query:
+            label = query['label']
+        if not label:
+            label = None
+        #Type: 'collection','concept' or 'all'
+        type_c = 'all'
+        if 'type' in query:
+            type_c = query['type']
+        if type_c not in ('all', 'concept', 'collection'):
+            raise ValueError("type: only the following values are allowed: 'all', 'concept', 'collection'")
+        #Collection to search in (optional)
+        coll_id = None
+        coll_depth = None
+        if 'collection' in query:
+            coll = query['collection']
+            if not 'id' in coll:
+                raise ValueError("collection: 'id' is required key if a collection-dictionary is given")
+            coll_id = coll['id']
+            coll_depth = 'members'
+            if 'depth' in coll:
+                coll_depth = coll['depth']
+            if coll_depth not in ('members', 'all'):
+                raise ValueError(
+                    "collection - 'depth': only the following values are allowed: 'all', 'concept', 'collection'")
 
-        Currently query is expected to be a dict, so that complex queries can
-        be passed. You can use this dict to search for concepts or collections
-        with a certain label, with a certain type and for concepts that belong
-        to a certain collection.
+        keywords = _build_keywords(label)
+        sparql = _build_sparql(self.getty, keywords, type_c, coll_id, coll_depth)
 
-        .. code-block:: python
-
-            # Find anything that has a label of church.
-            provider.find({'label': 'church'}
-
-            # Find all concepts that are a part of collection 5.
-            provider.find({'type': 'concept', 'collection': {'id': 5})
-
-            # Find all concepts, collections or children of these
-            # that belong to collection 5.
-            provider.find({'collection': {'id': 5, 'depth': 'all'})
-
-        :param query: A dict that can be used to express a query. The following
-            keys are permitted:
-
-            * `label`: Search for something with this label value. An empty \
-                label is equal to searching for all concepts.
-            * `type`: Limit the search to certain SKOS elements. If not \
-                present `all` is assumed:
-
-                * `concept`: Only return :class:`skosprovider.skos.Concept` \
-                    instances.
-                * `collection`: Only return \
-                    :class:`skosprovider.skos.Collection` instances.
-                * `all`: Return both :class:`skosprovider.skos.Concept` and \
-                    :class:`skosprovider.skos.Collection` instances.
-            * `collection`: Search only for concepts belonging to a certain \
-                collection. This argument should be a dict with two keys:
-
-                * `id`: The id of a collection. Required.
-                * `depth`: Can be `members` or `all`. Optional. If not \
-                    present, `members` is assumed, meaning only concepts or \
-                    collections that are a direct member of the collection \
-                    should be considered. When set to `all`, this method \
-                    should return concepts and collections that are a member \
-                    of the collection or are a narrower concept of a member \
-                    of the collection.
-
-        :returns: A :class:`lst` of concepts and collections. Each of these
-            is a dict with the following keys:
-
-            * id: id within the conceptscheme
-            * uri: :term:`uri` of the concept or collection
-            * type: concept or collection
-            * label: A label to represent the concept or collection. It is \
-                determined by looking at the `**kwargs` parameter, the default \
-                language of the provider and finally falls back to `en`.
-        '''
-
-        #todo interprete query parameters + which getty vocaulairy
-        label = query['label']
-        type = query['type']
-        collection = query['collection']
-
-        #todo build sparql query
-        keywords = '"church* AND abbey*"'
-        data = {"query": """PREFIX luc: <http://www.ontotext.com/owlim/lucene#>
-        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-        PREFIX gvp: <http://vocab.getty.edu/ontology#>
-        PREFIX skosxl: <http://www.w3.org/2008/05/skos-xl#>
-        PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
-        PREFIX dct: <http://purl.org/dc/terms/>
-        PREFIX gvp_lang: <http://vocab.getty.edu/language/>
-        PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-        SELECT ?Subject ?Term ?Parents ?ScopeNote ?Type {
-        ?Subject luc:term""" + keywords + """; a ?typ.
-        ?typ rdfs:subClassOf gvp:Subject; rdfs:label ?Type.
-        optional {?Subject gvp:prefLabelGVP [skosxl:literalForm ?Term]}
-        optional {?Subject gvp:parentStringAbbrev ?Parents}
-        optional {?Subject skos:scopeNote [dct:language gvp_lang:en; rdf:value ?ScopeNote]}}"""
-                }
-
-        #send request to getty
-        r = requests.get("http://vocab.getty.edu/sparql.json", params=data).json()
-
-        #todo build answer
-        answer = []
-        for result in r["results"]["bindings"]:
-            item = {'id': result["Subject"]["value"],
-                    'uri': result["Subject"]["value"],
-                    'type': type,
-                    'label': result["Term"]["value"]
-                    }
-            answer.append(item)
-        return answer
+        try:
+            #send request to getty
+            r = requests.get(self.base_url + "sparql.json", params={"query": sparql}).json()
+            #build answer
+            answer = []
+            for result in r["results"]["bindings"]:
+                item = {'id': result["Id"]["value"],
+                        'uri': result["Subject"]["value"],
+                        'type': result["Type"]["value"],
+                        'label': result["Term"]["value"]
+                        }
+                answer.append(item)
+            return answer
+        except:
+            return False
 
     def get_all(self):
         warnings.warn(
-        'This provider does not support this yet. It still in developement',
-         UserWarning
+            'This provider does not support this yet. It still in development',
+            UserWarning
         )
         return False
 
     def get_top_concepts(self):
         warnings.warn(
-        'This provider does not support this yet. It still in developement',
-         UserWarning
+            'This provider does not support this yet. It still in development',
+            UserWarning
         )
         return False
