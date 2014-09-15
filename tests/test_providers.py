@@ -70,16 +70,48 @@ class GettyProviderTests(unittest.TestCase):
         top_TGN_display = TGNProvider({'id': 'TGN'}).get_top_display()
         self.assertIsInstance(top_TGN_display, list)
         self.assertGreater(len(top_TGN_display), 0)
-        self.assertIn('World', [label['label']['label'] for label in top_TGN_display])
+        keys_first_display = top_TGN_display[0].keys()
+        for key in ['id', 'type', 'label', 'uri']:
+            self.assertIn(key, keys_first_display)
+        self.assertIn('World', [label['label'] for label in top_TGN_display])
         top_AAT_display = AATProvider({'id': 'AAT'}).get_top_display()
         self.assertIsInstance(top_AAT_display, list)
         self.assertGreater(len(top_AAT_display), 0)
-        self.assertIn('Styles and Periods Facet', [label['label']['label'] for label in top_AAT_display])
+        self.assertIn('Styles and Periods Facet', [label['label'] for label in top_AAT_display])
 
     def test_get_top_concepts(self):
         top_TGN_concepts = TGNProvider({'id': 'TGN'}).get_top_concepts()
         self.assertIsInstance(top_TGN_concepts, list)
         self.assertEqual(len(top_TGN_concepts), 0)
+
+    def test_get_childeren_display(self):
+        childeren_tgn_belgie = TGNProvider({'id': 'TGN'}).get_children_display('1000063')
+        self.assertIsInstance(childeren_tgn_belgie, list)
+        self.assertGreater(len(childeren_tgn_belgie), 0)
+        keys_first_display = childeren_tgn_belgie[0].keys()
+        for key in ['id', 'type', 'label', 'uri']:
+            self.assertIn(key, keys_first_display)
+        self.assertIn('Yser', [label['label'] for label in childeren_tgn_belgie])
+
+    def test_expand(self):
+        all_childeren_churches = AATProvider({'id': 'AAT'}).expand('300007466')
+        childeren_churches = AATProvider({'id': 'AAT'}).get_children_display('300007466')
+        self.assertIsInstance(all_childeren_churches, list)
+        self.assertGreater(len(all_childeren_churches), 0)
+        keys_first_display = all_childeren_churches[0].keys()
+        for key in ['id', 'type', 'label', 'uri']:
+            self.assertIn(key, keys_first_display)
+        self.assertIn('300007466', [concept['id'] for concept in all_childeren_churches])
+        self.assertGreater(len(all_childeren_churches), len(childeren_churches))
+
+    def test_expand_invalid(self):
+        all_childeren_invalid = AATProvider({'id': 'AAT'}).expand('invalid')
+        self.assertFalse(all_childeren_invalid)
+
+    def test_expand_collection(self):
+        all_childeren_churches_by_fuction = AATProvider({'id': 'AAT'}).expand('300007492')
+        self.assertNotIn('300007492', [concept['id'] for concept in all_childeren_churches_by_fuction])
+
 
     def test_find_concepts_in_collection(self):
         r = AATProvider({'id': 'AAT'}).find({'label': 'church', 'type': 'concept', 'collection': {'id': '300007466', 'depth': 'all'}})

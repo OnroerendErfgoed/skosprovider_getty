@@ -13,7 +13,8 @@ from skosprovider.providers import VocabularyProvider
 
 from skosprovider_getty.utils import (
     getty_to_skos,
-    uri_to_id
+    uri_to_id,
+    decode_literal
 )
 
 
@@ -135,13 +136,6 @@ class GettyProvider(VocabularyProvider):
 
         return self.get_by_id(id, change_notes)
 
-    def expand(self, id):
-        warnings.warn(
-            'This provider does not support this yet. It still in development',
-            UserWarning
-        )
-        return False
-
 
     def find(self, query):
         # #  interprete and validate query parameters (label, type and collection)
@@ -197,38 +191,54 @@ class GettyProvider(VocabularyProvider):
         )
         return False
 
-    def _get_top(self, type='All'):
-        """ Returns all top-level facets. The returned values depend on the given type:
-            Concept or All (Concepts and Collections). Default All is used.
-
-        :param (str) type: Concepts or All (Concepts and Collections) top facets to return
-        :return: A :class:`lst` of concepts (and collections). Each of these is a dict with the id and label keys
-        """
-        type_concepts = '{?Type rdfs:subClassOf skos:Concept}'
-        type = type_concepts if type == "concepts" else type_concepts + ' UNION {?Type rdfs:subClassOf skos:Collection}'
-        query = 'SELECT DISTINCT ?Id ?Term {?facet a gvp:Facet; rdf:type ?Type; dc:identifier ?Id; skos:inScheme %s:;.' \
-                '%s optional {?facet gvp:prefLabelGVP [skosxl:literalForm ?Term]}}' \
-                % (self.getty, type)
+    def _get_answer(self, query):
         # send request to getty
+        """ Returns the results of the Sparql query to a :class:`lst` of concepts and collections.
+            The return :class:`lst`  can be empty.
+
+        :param query (str): Sparql query
+        :returns: A :class:`lst` of concepts and collections. Each of these
+            is a dict with the following keys:
+            * id: id within the conceptscheme
+            * uri: :term:`uri` of the concept or collection
+            * type: concept or collection
+            * label: A label to represent the concept or collection.
+        """
+        # todo encoding issues
         r = requests.get(self.base_url + "sparql.json", params={"query": query}).json()
         # build answer
         answer = []
         for result in r["results"]["bindings"]:
             item = {
                 'id': result["Id"]["value"],
-                'label': {
-                    'label': result["Term"]["value"],
-                    'language': result["Term"]["xml:lang"] if "xml:lang" in result["Term"] else 'en',
-                    'type': 'prefLabel'
-                }
+                'uri': result["Subject"]["value"],
+                'type': result["Type"]["value"].rsplit('#', 1)[1],
+                'label': result["Term"]["value"]
             }
             answer.append(item)
         return answer
 
+    def _get_top(self, type='All'):
+        """ Returns all top-level facets. The returned values depend on the given type:
+            Concept or All (Concepts and Collections). Default All is used.
+
+        :param (str) type: Concepts or All (Concepts and Collections) top facets to return
+        :return: A :class:`lst` of concepts (and collections).
+        """
+
+        type_concepts = 'FILTER(?Type=skos:Concept'
+        type = type_concepts if type == "concepts" else type_concepts + ' || ?Type=skos:Collection'
+
+        query = 'SELECT ?Subject ?Id ?Type ?Term {?Subject a gvp:Facet; rdf:type ?Type;' \
+                ' dc:identifier ?Id; skos:inScheme %s:;.' \
+                ' OPTIONAL {?Subject gvp:prefLabelGVP [skosxl:literalForm ?Term]} %s)}' \
+                % (self.getty, type)
+        return self._get_answer(query)
+
     def get_top_concepts(self):
         """  Returns all concepts that form the top-level of a display hierarchy.
 
-        :return: A :class:`lst` of concepts. Each of these is a dict with the id and label keys.
+        :return: A :class:`lst` of concepts.
         """
         return self._get_top("concepts")
 
@@ -236,9 +246,50 @@ class GettyProvider(VocabularyProvider):
     def get_top_display(self):
         """  Returns all concepts or collections that form the top-level of a display hierarchy.
 
-        :return: A :class:`lst` of concepts and collections. Each of these is a dict with the id and label keys.
+        :return: A :class:`lst` of concepts and collections.
         """
         return self._get_top()
+
+    def _get_children(self, id, extended=False):
+
+        broader = 'broaderExtended' if extended else 'broader'
+
+        query = 'SELECT DISTINCT ?Subject ?Id ?Type ?Term {?Subject rdf:type ?Type;' \
+                ' dc:identifier ?Id; skos:inScheme %s:; gvp:%s %s:%s;.' \
+                ' OPTIONAL {?Subject gvp:prefLabelGVP [skosxl:literalForm ?Term]}' \
+                ' FILTER(?Type=skos:Concept || ?Type=skos:Collection)}' \
+                % (self.getty, broader, self.getty, id)
+
+        return self._get_answer(query)
+
+    def get_children_display(self, id):
+        """ Return a list of concepts or collections that should be displayed under this concept or collection.
+
+        :param str id: A concept or collection id.
+        :returns: A :class:`lst` of concepts and collections.
+        """
+        return self._get_children(id)
+
+    def expand(self, id):
+        """ Expand a concept or collection to all it's narrower concepts.
+            If the id passed belongs to a :class:`skosprovider.skos.Concept`,
+            the id of the concept itself should be include in the return value.
+
+        :param str id: A concept or collection id.
+        :returns: A :class:`lst` of concepts and collections. Returns false if the input id does not exists
+        """
+        query = 'SELECT DISTINCT ?Subject ?Id ?Type ?Term {?Subject rdf:type ?Type;' \
+                ' dc:identifier ?Id; skos:inScheme %s:;' \
+                ' OPTIONAL {?Subject gvp:prefLabelGVP [skosxl:literalForm ?Term]}' \
+                ' FILTER(?Subject=%s:%s && (?Type=skos:Concept || ?Type=skos:Collection))}' \
+                % (self.getty, self.getty, id)
+        concept = self._get_answer(query)
+        answer = []
+        if len(concept) == 0:
+            return False
+        if concept[0]['type'] == 'Concept':
+            answer += concept
+        return answer + self._get_children(id, extended=True)
 
 
 class AATProvider(GettyProvider):
