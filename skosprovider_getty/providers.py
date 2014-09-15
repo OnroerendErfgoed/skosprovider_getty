@@ -119,7 +119,7 @@ class GettyProvider(VocabularyProvider):
         except Exception as err:
             if hasattr(err, 'code'):
                 if err.code == 404:
-                    return None
+                    return False
             else:
                 raise
 
