@@ -16,6 +16,7 @@ from skosprovider_getty.utils import (
     uri_to_id
 )
 
+
 def _build_keywords(label):
     keyword_list = label.split(" ")
     keywords = ""
@@ -26,6 +27,7 @@ def _build_keywords(label):
             keywords = keywords + item + " AND "
 
     return "'" + keywords + "'"
+
 
 def _build_sparql(getty, keywords, type_c, coll_id, coll_depth):
     getty += ":"
@@ -65,22 +67,31 @@ def _build_sparql(getty, keywords, type_c, coll_id, coll_depth):
 
 
 class GettyProvider(VocabularyProvider):
-    '''A provider that can work with the GETTY rdf files of
+    """A provider that can work with the GETTY rdf files of
     http://vocab.getty.edu/
 
-    '''
+    """
+
     def __init__(self, metadata, **kwargs):
+        """ Constructor of the :class:`skosprovider_getty.providers.GettyProvider`
+
+        :param (dict) metadata: metadata of the provider
+        :param kwargs: arguments defining the provider.
+            * Typical arguments are  `base_url`, `getty` and `url`.
+                The `url` is a composition of the `base_url` and `getty`
+            * The :class:`skosprovider_getty.providers.AATProvider`
+                is the default :class:`skosprovider_getty.providers.GettyProvider`
+        """
         if not 'default_language' in metadata:
             metadata['default_language'] = 'en'
         if 'base_url' in kwargs:
             self.base_url = kwargs['base_url']
         else:
             self.base_url = 'http://vocab.getty.edu/'
-            print(self.base_url)
         if 'getty' in kwargs:
             self.getty = kwargs['getty']
         else:
-            self.getty = 'att'
+            self.getty = 'aat'
         if not 'url' in kwargs:
             self.url = self.base_url + self.getty
         else:
@@ -91,7 +102,7 @@ class GettyProvider(VocabularyProvider):
     def get_by_id(self, id, change_notes=False):
         """ Get a :class:`skosprovider.skos.Concept` or :class:`skosprovider.skos.Collection` by id
 
-        :param (int) id: integer id of the :class:`skosprovider.skos.Concept` or :class:`skosprovider.skos.Concept`
+        :param (str) id: integer id of the :class:`skosprovider.skos.Concept` or :class:`skosprovider.skos.Concept`
         :return: corresponding :class:`skosprovider.skos.Concept` or :class:`skosprovider.skos.Concept`.
             Returns None if non-existing id
         """
@@ -111,7 +122,6 @@ class GettyProvider(VocabularyProvider):
                     return None
             else:
                 raise
-
 
     def get_by_uri(self, uri, change_notes=False):
         """ Get a :class:`skosprovider.skos.Concept` or :class:`skosprovider.skos.Collection` by uri
@@ -134,13 +144,13 @@ class GettyProvider(VocabularyProvider):
 
 
     def find(self, query):
-        ##  interprete and validate query parameters (label, type and collection)
-        #Label
+        # #  interprete and validate query parameters (label, type and collection)
+        # Label
         if 'label' in query:
             label = query['label']
         if not label:
             label = None
-        #Type: 'collection','concept' or 'all'
+        # Type: 'collection','concept' or 'all'
         type_c = 'all'
         if 'type' in query:
             type_c = query['type']
@@ -174,7 +184,7 @@ class GettyProvider(VocabularyProvider):
                         'uri': result["Subject"]["value"],
                         'type': result["Type"]["value"],
                         'label': result["Term"]["value"]
-                        }
+                }
                 answer.append(item)
             return answer
         except:
@@ -187,29 +197,69 @@ class GettyProvider(VocabularyProvider):
         )
         return False
 
-    def get_top_concepts(self):
-        warnings.warn(
-            'This provider does not support this yet. It still in development',
-            UserWarning
-        )
-        return False
+    def _get_top(self, type='All'):
+        """ Returns all top-level facets. The returned values depend on the given type:
+            Concept or All (Concepts and Collections). Default All is used.
 
-class ATTProvider(GettyProvider):
-    """ The Art & Architecture Thesaurus Provider
-    A provider that can work with the GETTY ATT rdf files of
-    http://vocab.getty.edu/att
-    """
-    def __init__(self, metadata):
-        """ Inherit functions of the getty provider using url http://vocab.getty.edu/att
+        :param (str) type: Concepts or All (Concepts and Collections) top facets to return
+        :return: A :class:`lst` of concepts (and collections). Each of these is a dict with the id and label keys
         """
-        GettyProvider.__init__(self, metadata, getty='aat')
+        type_concepts = '{?Type rdfs:subClassOf skos:Concept}'
+        type = type_concepts if type == "concepts" else type_concepts + ' UNION {?Type rdfs:subClassOf skos:Collection}'
+        query = 'SELECT DISTINCT ?Id ?Term {?facet a gvp:Facet; rdf:type ?Type; dc:identifier ?Id; skos:inScheme %s:;.' \
+                '%s optional {?facet gvp:prefLabelGVP [skosxl:literalForm ?Term]}}' \
+                % (self.getty, type)
+        # send request to getty
+        r = requests.get(self.base_url + "sparql.json", params={"query": query}).json()
+        # build answer
+        answer = []
+        for result in r["results"]["bindings"]:
+            item = {
+                'id': result["Id"]["value"],
+                'label': {
+                    'label': result["Term"]["value"],
+                    'language': result["Term"]["xml:lang"] if "xml:lang" in result["Term"] else 'en',
+                    'type': 'prefLabel'
+                }
+            }
+            answer.append(item)
+        return answer
+
+    def get_top_concepts(self):
+        """  Returns all concepts that form the top-level of a display hierarchy.
+
+        :return: A :class:`lst` of concepts. Each of these is a dict with the id and label keys.
+        """
+        return self._get_top("concepts")
+
+
+    def get_top_display(self):
+        """  Returns all concepts or collections that form the top-level of a display hierarchy.
+
+        :return: A :class:`lst` of concepts and collections. Each of these is a dict with the id and label keys.
+        """
+        return self._get_top()
+
+
+class AATProvider(GettyProvider):
+    """ The Art & Architecture Thesaurus Provider
+    A provider that can work with the GETTY AAT rdf files of
+    http://vocab.getty.edu/aat
+    """
+
+    def __init__(self, metadata):
+        """ Inherit functions of the getty provider using url http://vocab.getty.edu/aat
+        """
+        GettyProvider.__init__(self, metadata, base_url='http://vocab.getty.edu/', getty='aat')
+
 
 class TGNProvider(GettyProvider):
     """ The Getty Thesaurus of Geographic Names
     A provider that can work with the GETTY GNT rdf files of
     http://vocab.getty.edu/tgn
     """
+
     def __init__(self, metadata):
         """ Inherit functions of the getty provider using url http://vocab.getty.edu/tgn
         """
-        GettyProvider.__init__(self, metadata, getty='tgn')
+        GettyProvider.__init__(self, metadata, base_url='http://vocab.getty.edu/', getty='tgn')

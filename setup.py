@@ -13,7 +13,6 @@ packages = [
 ]
 
 requires = [
-    'skosprovider_rdf',
     'skosprovider',
     'requests',
     'rdflib'

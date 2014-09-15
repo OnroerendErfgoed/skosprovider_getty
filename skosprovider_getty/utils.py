@@ -71,19 +71,15 @@ class getty_to_skos():
         return list
 
     def _create_label(self, literal, type):
-        if not Label.is_valid_type(type):
-            raise ValueError(
-                'Type of Label is not valid.'
-            )
         language = literal.language
         if language is None:
             return None
         return Label(decode_literal(literal), type, language)
 
     def _create_note(self, uri, type):
-
-        try:
-
+        if not self.change_notes and '/rev/' in uri:
+            return None
+        else:
             note = ''
             language = 'en'
 
@@ -92,25 +88,15 @@ class getty_to_skos():
                 note += decode_literal(o)
                 language = o.language
 
-            if self.change_notes:
-                # for http://vocab.getty.edu/aat/rev/
-                for s, p, o in self.graph.triples((uri, DC.type, None)):
-                    note += decode_literal(o)
-                for s, p, o in self.graph.triples((uri, DC.description, None)):
-                    note += ': %s' % decode_literal(o)
-                for s, p, o in self.graph.triples((uri, PROV.startedAtTime, None)):
-                    note += ' at %s ' % decode_literal(o)
+            # for http://vocab.getty.edu/aat/rev/
+            for s, p, o in self.graph.triples((uri, DC.type, None)):
+                note += decode_literal(o)
+            for s, p, o in self.graph.triples((uri, DC.description, None)):
+                note += ': %s' % decode_literal(o)
+            for s, p, o in self.graph.triples((uri, PROV.startedAtTime, None)):
+                note += ' at %s ' % decode_literal(o)
 
             return Note(note, type, language)
-
-        # for python2.7 this is urllib2.HTTPError
-        # for python3 this is urllib.error.HTTPError
-        except Exception as err:
-            if hasattr(err, 'code'):
-                if err.code == 404:
-                    return None
-            else:
-                raise
 
 def decode_literal(literal):
     # the literals are of different type in python 2.7 and python 3
