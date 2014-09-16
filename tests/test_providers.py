@@ -91,7 +91,7 @@ class GettyProviderTests(unittest.TestCase):
         keys_first_display = childeren_tgn_belgie[0].keys()
         for key in ['id', 'type', 'label', 'uri']:
             self.assertIn(key, keys_first_display)
-        self.assertIn('Yser', [label['label'] for label in childeren_tgn_belgie])
+        self.assertIn('Amblève', [label['label'] for label in childeren_tgn_belgie])
 
     def test_expand(self):
         all_childeren_churches = AATProvider({'id': 'AAT'}).expand('300007466')

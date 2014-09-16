@@ -59,8 +59,8 @@ class getty_to_skos():
             if Label.is_valid_type(type):
                 o = self._create_label(o, type)
             elif Note.is_valid_type(type):
-                if decode_literal(o) not in note_uris:
-                    note_uris.append(decode_literal(o))
+                if literal_to_str(o) not in note_uris:
+                    note_uris.append(literal_to_str(o))
                     o = self._create_note(o, type)
                 else:
                     o = None
@@ -74,7 +74,7 @@ class getty_to_skos():
         language = literal.language
         if language is None:
             return None
-        return Label(decode_literal(literal), type, language)
+        return Label(literal_to_str(literal), type, language)
 
     def _create_note(self, uri, type):
         if not self.change_notes and '/rev/' in uri:
@@ -85,23 +85,23 @@ class getty_to_skos():
 
             # http://vocab.getty.edu/aat/scopeNote
             for s, p, o in self.graph.triples((uri, RDF.value, None)):
-                note += decode_literal(o)
+                note += literal_to_str(o)
                 language = o.language
 
             # for http://vocab.getty.edu/aat/rev/
             for s, p, o in self.graph.triples((uri, DC.type, None)):
-                note += decode_literal(o)
+                note += literal_to_str(o)
             for s, p, o in self.graph.triples((uri, DC.description, None)):
-                note += ': %s' % decode_literal(o)
+                note += ': %s' % literal_to_str(o)
             for s, p, o in self.graph.triples((uri, PROV.startedAtTime, None)):
-                note += ' at %s ' % decode_literal(o)
+                note += ' at %s ' % literal_to_str(o)
 
             return Note(note, type, language)
 
-def decode_literal(literal):
+def literal_to_str(literal):
     # the literals are of different type in python 2.7 and python 3
     if isinstance(literal, str):
-        return literal.encode('utf-8').decode('utf-8')
+        return str(literal)
     else:
         return literal.encode('utf-8')
 

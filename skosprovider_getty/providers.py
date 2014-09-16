@@ -14,7 +14,7 @@ from skosprovider.providers import VocabularyProvider
 from skosprovider_getty.utils import (
     getty_to_skos,
     uri_to_id,
-    decode_literal
+    literal_to_str
 )
 
 
@@ -204,8 +204,9 @@ class GettyProvider(VocabularyProvider):
             * type: concept or collection
             * label: A label to represent the concept or collection.
         """
-        # todo encoding issues
-        r = requests.get(self.base_url + "sparql.json", params={"query": query}).json()
+        res = requests.get(self.base_url + "sparql.json", params={"query": query})
+        res.encoding = 'utf-8'
+        r = res.json()
         # build answer
         answer = []
         for result in r["results"]["bindings"]:
@@ -213,7 +214,7 @@ class GettyProvider(VocabularyProvider):
                 'id': result["Id"]["value"],
                 'uri': result["Subject"]["value"],
                 'type': result["Type"]["value"].rsplit('#', 1)[1],
-                'label': result["Term"]["value"]
+                'label': literal_to_str(result["Term"]["value"])
             }
             answer.append(item)
         return answer
