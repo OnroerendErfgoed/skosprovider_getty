@@ -44,7 +44,7 @@ class getty_to_skos():
 
         return clist
 
-    def _create_from_subject_typelist(self, subject,typelist):
+    def _create_from_subject_typelist(self, subject, typelist):
         list=[]
         note_uris = []
         for p in typelist:
@@ -107,7 +107,7 @@ def decode_literal(literal):
 
 def hierarchy_notetypes(list):
     # A getty scopeNote wil be of type skos.note and skos.scopeNote
-    # To avoid doubles and to make sure the the getty scopeNote will have type skos.scopeNote and not skos.note,
+    # To avoid doubles and to make sure the getty scopeNote will have type skos.scopeNote and not skos.note,
     # the skos.note will be added at the end of the list
     index_note = list.index('note')
     if index_note != -1:

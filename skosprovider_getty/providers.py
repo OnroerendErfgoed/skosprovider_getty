@@ -1,21 +1,16 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-
 import rdflib
 import requests
 import warnings
-
 import logging
-
-log = logging.getLogger(__name__)
-
 from skosprovider.providers import VocabularyProvider
-
 from skosprovider_getty.utils import (
     getty_to_skos,
-    uri_to_id,
-    decode_literal
+    uri_to_id
 )
+
+log = logging.getLogger(__name__)
 
 
 def _build_keywords(label):
@@ -28,44 +23,6 @@ def _build_keywords(label):
             keywords = keywords + item + " AND "
 
     return "'" + keywords + "'"
-
-
-def _build_sparql(getty, keywords, type_c, coll_id, coll_depth):
-    getty += ":"
-    keywords_x = "luc:term " + keywords
-    getty_x = "skos:inScheme " + getty
-    if coll_id is None:
-        coll_x = ""
-    else:
-        if coll_depth == 'all':
-            coll_x = "gvp:broaderExtended " + getty + coll_id
-        elif coll_depth == 'members':
-            coll_x = "gvp:broader " + getty + coll_id
-
-    if type_c == 'all':
-        type_x = "{?Type rdfs:subClassOf skos:Concept} UNION {?Type rdfs:subClassOf skos:Collection}"
-    elif type_c == 'concept':
-        type_x = "{?Type rdfs:subClassOf skos:Concept}"
-    elif type_c == 'collection':
-        type_x = "{?Type rdfs:subClassOf skos:Collection}"
-
-    query = """
-        PREFIX luc: <http://www.ontotext.com/owlim/lucene#>
-        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-        PREFIX gvp: <http://vocab.getty.edu/ontology#>
-        PREFIX skosxl: <http://www.w3.org/2008/05/skos-xl#>
-        PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
-        PREFIX dct: <http://purl.org/dc/terms/>
-        PREFIX gvp_lang: <http://vocab.getty.edu/language/>
-        PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-        SELECT ?Subject ?Term ?Type ?Id {
-        ?Subject rdf:type ?Type; dc:identifier ?Id; """ + keywords_x + """; """ + getty_x + """; """ + coll_x + """;.
-        """ + type_x + """
-        optional {?Subject gvp:prefLabelGVP [skosxl:literalForm ?Term]}}
-        """
-    print(query)
-    return query
-
 
 class GettyProvider(VocabularyProvider):
     """A provider that can work with the GETTY rdf files of
@@ -99,6 +56,9 @@ class GettyProvider(VocabularyProvider):
             self.url = kwargs['url']
 
         super(GettyProvider, self).__init__(metadata, **kwargs)
+
+    def _get_language(self, **kwargs):
+        return 'nl'
 
     def get_by_id(self, id, change_notes=False):
         """ Get a :class:`skosprovider.skos.Concept` or :class:`skosprovider.skos.Collection` by id
@@ -165,22 +125,29 @@ class GettyProvider(VocabularyProvider):
                 raise ValueError(
                     "collection - 'depth': only the following values are allowed: 'all', 'concept', 'collection'")
 
-        keywords = _build_keywords(label)
-        sparql = _build_sparql(self.getty, keywords, type_c, coll_id, coll_depth)
+        #build sparql query
+        coll_x = ""
+        if coll_id is not None and coll_depth == 'all':
+            coll_x = "gvp:broaderExtended " + self.getty + ":" + coll_id
+        elif coll_id is not None and coll_depth == 'members':
+            coll_x = "gvp:broader " + self.getty + ":" + coll_id
 
+        filter_language = '(?Lang=gvp_lang:en || ?Lang=gvp_lang:nl)'
+        filter = filter_language + " && (?Type=skos:Concept || ?Type=skos:Collection)"
+        if type_c == 'concept':
+            filter = filter_language + " && (?Type=skos:Concept)"
+        elif type_c == 'collection':
+            filter = filter_language + " && (?Type=skos:Collection)"
+        query = """
+            SELECT ?Subject ?Term ?Type ?Id ?Lang {
+            ?Subject rdf:type ?Type; dc:identifier ?Id; luc:term %s; skos:inScheme %s:; %s;.
+            optional {?Subject xl:prefLabel [skosxl:literalForm ?Term; dcterms:language ?Lang]}
+            FILTER(%s)}
+            """ % (_build_keywords(label), self.getty, coll_x, filter)
+        print(query)
+        print (self._get_language())
         try:
-            #send request to getty
-            r = requests.get(self.base_url + "sparql.json", params={"query": sparql}).json()
-            #build answer
-            answer = []
-            for result in r["results"]["bindings"]:
-                item = {'id': result["Id"]["value"],
-                        'uri': result["Subject"]["value"],
-                        'type': result["Type"]["value"],
-                        'label': result["Term"]["value"]
-                }
-                answer.append(item)
-            return answer
+            return self._get_answer(query)
         except:
             return False
 
