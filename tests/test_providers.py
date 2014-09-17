@@ -77,7 +77,7 @@ class GettyProviderTests(unittest.TestCase):
         top_AAT_display = AATProvider({'id': 'AAT'}).get_top_display()
         self.assertIsInstance(top_AAT_display, list)
         self.assertGreater(len(top_AAT_display), 0)
-        self.assertIn('Styles and Periods Facet', [label['label'] for label in top_AAT_display])
+        self.assertIn('Facet Stijlen en perioden', [label['label'] for label in top_AAT_display])
 
     def test_get_top_concepts(self):
         top_TGN_concepts = TGNProvider({'id': 'TGN'}).get_top_concepts()
@@ -91,7 +91,7 @@ class GettyProviderTests(unittest.TestCase):
         keys_first_display = childeren_tgn_belgie[0].keys()
         for key in ['id', 'type', 'label', 'uri']:
             self.assertIn(key, keys_first_display)
-        self.assertIn('Yser', [label['label'] for label in childeren_tgn_belgie])
+        self.assertIn('Brussels Hoofdstedelijk Gewest', [label['label'] for label in childeren_tgn_belgie])
 
     def test_expand(self):
         all_childeren_churches = AATProvider({'id': 'AAT'}).expand('300007466')

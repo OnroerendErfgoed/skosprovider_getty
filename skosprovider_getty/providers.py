@@ -7,7 +7,8 @@ import logging
 from skosprovider.providers import VocabularyProvider
 from skosprovider_getty.utils import (
     getty_to_skos,
-    uri_to_id
+    uri_to_id,
+    literal_to_str
 )
 
 log = logging.getLogger(__name__)
@@ -41,7 +42,7 @@ class GettyProvider(VocabularyProvider):
                 is the default :class:`skosprovider_getty.providers.GettyProvider`
         """
         if not 'default_language' in metadata:
-            metadata['default_language'] = 'en'
+            metadata['default_language'] = 'nl'
         if 'base_url' in kwargs:
             self.base_url = kwargs['base_url']
         else:
@@ -58,7 +59,7 @@ class GettyProvider(VocabularyProvider):
         super(GettyProvider, self).__init__(metadata, **kwargs)
 
     def _get_language(self, **kwargs):
-        return 'nl'
+        return self.metadata['default_language']
 
     def get_by_id(self, id, change_notes=False):
         """ Get a :class:`skosprovider.skos.Concept` or :class:`skosprovider.skos.Collection` by id
@@ -132,12 +133,12 @@ class GettyProvider(VocabularyProvider):
         elif coll_id is not None and coll_depth == 'members':
             coll_x = "gvp:broader " + self.getty + ":" + coll_id
 
-        filter_language = '(?Lang=gvp_lang:en || ?Lang=gvp_lang:nl)'
-        filter = filter_language + " && (?Type=skos:Concept || ?Type=skos:Collection)"
+
+        filter = self._get_language_filter() + " && (?Type=skos:Concept || ?Type=skos:Collection)"
         if type_c == 'concept':
-            filter = filter_language + " && (?Type=skos:Concept)"
+            filter = self._get_language_filter()  + " && (?Type=skos:Concept)"
         elif type_c == 'collection':
-            filter = filter_language + " && (?Type=skos:Collection)"
+            filter = self._get_language_filter()  + " && (?Type=skos:Collection)"
         query = """
             SELECT ?Subject ?Term ?Type ?Id ?Lang {
             ?Subject rdf:type ?Type; dc:identifier ?Id; luc:term %s; skos:inScheme %s:; %s;.
@@ -171,19 +172,23 @@ class GettyProvider(VocabularyProvider):
             * type: concept or collection
             * label: A label to represent the concept or collection.
         """
-        # todo encoding issues
-        r = requests.get(self.base_url + "sparql.json", params={"query": query}).json()
+        res = requests.get(self.base_url + "sparql.json", params={"query": query})
+        res.encoding = 'utf-8'
+        r = res.json()
         # build answer
-        answer = []
+        #answer = []
+        d = {}
         for result in r["results"]["bindings"]:
+            uri = result["Subject"]["value"],
             item = {
-                'id': result["Id"]["value"],
-                'uri': result["Subject"]["value"],
-                'type': result["Type"]["value"].rsplit('#', 1)[1],
-                'label': result["Term"]["value"]
+            'id': result["Id"]["value"],
+            'uri': uri,
+            'type': result["Type"]["value"].rsplit('#', 1)[1],
+            'label': literal_to_str(result["Term"]["value"])
             }
-            answer.append(item)
-        return answer
+            if id not in d or self._get_language() == uri_to_id(result["Lang"]["value"]):
+                d[uri] = item
+        return list(d.values())
 
     def _get_top(self, type='All'):
         """ Returns all top-level facets. The returned values depend on the given type:
@@ -193,13 +198,16 @@ class GettyProvider(VocabularyProvider):
         :return: A :class:`lst` of concepts (and collections).
         """
 
-        type_concepts = 'FILTER(?Type=skos:Concept'
-        type = type_concepts if type == "concepts" else type_concepts + ' || ?Type=skos:Collection'
+        if type == "concepts" :
+            filter = self._get_language_filter() + " && (?Type=skos:Concept)"
+        else:
+            filter = self._get_language_filter() + " && (?Type=skos:Concept || ?Type=skos:Collection)"
 
-        query = 'SELECT ?Subject ?Id ?Type ?Term {?Subject a gvp:Facet; rdf:type ?Type;' \
-                ' dc:identifier ?Id; skos:inScheme %s:;.' \
-                ' OPTIONAL {?Subject gvp:prefLabelGVP [skosxl:literalForm ?Term]} %s)}' \
-                % (self.getty, type)
+        query = """SELECT ?Subject ?Id ?Type ?Term ?Lang
+                {?Subject a gvp:Facet; rdf:type ?Type;
+                 dc:identifier ?Id; skos:inScheme %s:;.
+                 OPTIONAL {?Subject xl:prefLabel [skosxl:literalForm ?Term; dcterms:language ?Lang]}
+                  FILTER(%s)}""" % (self.getty, filter)
         return self._get_answer(query)
 
     def get_top_concepts(self):
@@ -221,11 +229,11 @@ class GettyProvider(VocabularyProvider):
 
         broader = 'broaderExtended' if extended else 'broader'
 
-        query = 'SELECT DISTINCT ?Subject ?Id ?Type ?Term {?Subject rdf:type ?Type;' \
-                ' dc:identifier ?Id; skos:inScheme %s:; gvp:%s %s:%s;.' \
-                ' OPTIONAL {?Subject gvp:prefLabelGVP [skosxl:literalForm ?Term]}' \
-                ' FILTER(?Type=skos:Concept || ?Type=skos:Collection)}' \
-                % (self.getty, broader, self.getty, id)
+        query = """SELECT ?Subject ?Id ?Type ?Term ?Lang
+                {?Subject rdf:type ?Type;
+                dc:identifier ?Id; skos:inScheme %s:; gvp:%s %s:%s;.
+                OPTIONAL {?Subject xl:prefLabel [skosxl:literalForm ?Term; dcterms:language ?Lang]}
+                FILTER(%s && (?Type=skos:Concept || ?Type=skos:Collection))}""" % (self.getty, broader, self.getty, id, self._get_language_filter())
 
         return self._get_answer(query)
 
@@ -245,11 +253,11 @@ class GettyProvider(VocabularyProvider):
         :param str id: A concept or collection id.
         :returns: A :class:`lst` of concepts and collections. Returns false if the input id does not exists
         """
-        query = 'SELECT DISTINCT ?Subject ?Id ?Type ?Term {?Subject rdf:type ?Type;' \
-                ' dc:identifier ?Id; skos:inScheme %s:;' \
-                ' OPTIONAL {?Subject gvp:prefLabelGVP [skosxl:literalForm ?Term]}' \
-                ' FILTER(?Subject=%s:%s && (?Type=skos:Concept || ?Type=skos:Collection))}' \
-                % (self.getty, self.getty, id)
+        query = """SELECT ?Subject ?Id ?Type ?Term ?Lang
+                {%s rdf:type ?Type; dc:identifier ?Id; skos:inScheme %s:;
+                OPTIONAL {%s xl:prefLabel [skosxl:literalForm ?Term; dcterms:language ?Lang]}
+                FILTER(%s && (?Type=skos:Concept || ?Type=skos:Collection))}""" % (self.getty + ":" + id, self.getty, self.getty + ":" + id, self._get_language_filter())
+        print(query)
         concept = self._get_answer(query)
         answer = []
         if len(concept) == 0:
@@ -257,6 +265,9 @@ class GettyProvider(VocabularyProvider):
         if concept[0]['type'] == 'Concept':
             answer += concept
         return answer + self._get_children(id, extended=True)
+
+    def _get_language_filter(self):
+        return "(?Lang=gvp_lang:en || ?Lang=gvp_lang:nl)"
 
 
 class AATProvider(GettyProvider):
