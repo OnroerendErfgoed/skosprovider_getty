@@ -109,8 +109,8 @@ class GettyProviderTests(unittest.TestCase):
         self.assertFalse(all_childeren_invalid)
 
     def test_expand_collection(self):
-        all_childeren_churches_by_fuction = AATProvider({'id': 'AAT'}).expand('300007492')
-        self.assertNotIn('300007492', [concept['id'] for concept in all_childeren_churches_by_fuction])
+        all_childeren_churches_by_fuction = AATProvider({'id': 'AAT'}).expand('300007494')
+        self.assertNotIn('300007494', [concept['id'] for concept in all_childeren_churches_by_fuction])
 
 
     def test_find_concepts_in_collection(self):

@@ -145,7 +145,7 @@ class GettyProvider(VocabularyProvider):
             ?Subject rdf:type ?Type; dc:identifier ?Id; luc:term %s; skos:inScheme %s:; %s;.
                             OPTIONAL {
                             VALUES ?Lang {gvp_lang:en gvp_lang:nl}
-                  {?Subject xl:prefLabel [skosxl:literalForm ?Term; dcterms:language gvp_lang:en]}
+                  {?Subject xl:prefLabel [skosxl:literalForm ?Term; dcterms:language ?Lang]}
                           }
             }""" % (type_values, _build_keywords(label), self.getty, coll_x)
         print(query)
@@ -179,12 +179,16 @@ class GettyProvider(VocabularyProvider):
         r = res.json()
         d = {}
         for result in r["results"]["bindings"]:
-            uri = result["Subject"]["value"],
+            uri = result["Subject"]["value"]
+            if "Term" in result:
+                label = literal_to_str(result["Term"]["value"])
+            else:
+                label = "<not available>"
             item = {
             'id': result["Id"]["value"],
             'uri': uri,
             'type': result["Type"]["value"].rsplit('#', 1)[1],
-            'label': literal_to_str(result["Term"]["value"])
+            'label': label
             }
             if uri not in d or self._get_language() == uri_to_id(result["Lang"]["value"]):
                 d[uri] = item
@@ -212,6 +216,7 @@ class GettyProvider(VocabularyProvider):
                  VALUES ?Lang {gvp_lang:en gvp_lang:nl}
                   {?Subject xl:prefLabel [skosxl:literalForm ?Term; dcterms:language ?Lang]}
                           }}""" % (type_values, self.getty)
+        print(query)
         return self._get_answer(query)
 
     def get_top_concepts(self):
