@@ -42,7 +42,7 @@ class GettyProvider(VocabularyProvider):
                 is the default :class:`skosprovider_getty.providers.GettyProvider`
         """
         if not 'default_language' in metadata:
-            metadata['default_language'] = 'nl'
+            metadata['default_language'] = 'en'
         if 'base_url' in kwargs:
             self.base_url = kwargs['base_url']
         else:
