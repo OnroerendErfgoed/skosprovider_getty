@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import rdflib
-import six
 
 from skosprovider.skos import (
     Concept,
