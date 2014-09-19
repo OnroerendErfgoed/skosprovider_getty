@@ -67,14 +67,14 @@ class GettyProviderTests(unittest.TestCase):
         self.assertFalse(TGNProvider({'id': 'TGN'}).get_all())
 
     def test_get_top_display(self):
-        top_TGN_display = TGNProvider({'id': 'TGN'}).get_top_display()
+        top_TGN_display = TGNProvider({'id': 'TGN', 'default_language': 'nl'}).get_top_display()
         self.assertIsInstance(top_TGN_display, list)
         self.assertGreater(len(top_TGN_display), 0)
         keys_first_display = top_TGN_display[0].keys()
         for key in ['id', 'type', 'label', 'uri']:
             self.assertIn(key, keys_first_display)
         self.assertIn('World', [label['label'] for label in top_TGN_display])
-        top_AAT_display = AATProvider({'id': 'AAT'}).get_top_display()
+        top_AAT_display = AATProvider({'id': 'AAT', 'default_language': 'nl'}).get_top_display()
         self.assertIsInstance(top_AAT_display, list)
         self.assertGreater(len(top_AAT_display), 0)
         self.assertIn('Facet Stijlen en perioden', [label['label'] for label in top_AAT_display])

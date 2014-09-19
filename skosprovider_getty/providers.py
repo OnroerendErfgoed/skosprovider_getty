@@ -47,12 +47,12 @@ class GettyProvider(VocabularyProvider):
             self.base_url = kwargs['base_url']
         else:
             self.base_url = 'http://vocab.getty.edu/'
-        if 'getty' in kwargs:
-            self.getty = kwargs['getty']
+        if 'vocab_id' in kwargs:
+            self.vocab_id = kwargs['vocab_id']
         else:
-            self.getty = 'aat'
+            self.vocab_id = 'aat'
         if not 'url' in kwargs:
-            self.url = self.base_url + self.getty
+            self.url = self.base_url + self.vocab_id
         else:
             self.url = kwargs['url']
 
@@ -129,9 +129,9 @@ class GettyProvider(VocabularyProvider):
         #build sparql query
         coll_x = ""
         if coll_id is not None and coll_depth == 'all':
-            coll_x = "gvp:broaderExtended " + self.getty + ":" + coll_id
+            coll_x = "gvp:broaderExtended " + self.vocab_id + ":" + coll_id
         elif coll_id is not None and coll_depth == 'members':
-            coll_x = "gvp:broader " + self.getty + ":" + coll_id
+            coll_x = "gvp:broader " + self.vocab_id + ":" + coll_id
 
 
         type_values = "(skos:Concept) (skos:Collection)"
@@ -147,7 +147,7 @@ class GettyProvider(VocabularyProvider):
                             VALUES ?Lang {gvp_lang:en gvp_lang:nl}
                   {?Subject xl:prefLabel [skosxl:literalForm ?Term; dcterms:language ?Lang]}
                           }
-            }""" % (type_values, _build_keywords(label), self.getty, coll_x)
+            }""" % (type_values, _build_keywords(label), self.vocab_id, coll_x)
         print(query)
         try:
             return self._get_answer(query)
@@ -215,7 +215,7 @@ class GettyProvider(VocabularyProvider):
                  OPTIONAL {
                  VALUES ?Lang {gvp_lang:en gvp_lang:nl}
                   {?Subject xl:prefLabel [skosxl:literalForm ?Term; dcterms:language ?Lang]}
-                          }}""" % (type_values, self.getty)
+                          }}""" % (type_values, self.vocab_id)
         print(query)
         return self._get_answer(query)
 
@@ -247,7 +247,7 @@ class GettyProvider(VocabularyProvider):
                 VALUES ?Lang {gvp_lang:en gvp_lang:nl}
                   {?Subject xl:prefLabel [skosxl:literalForm ?Term; dcterms:language ?Lang]}
                           }
-                }""" % (self.getty, broader, self.getty, id)
+                }""" % (self.vocab_id, broader, self.vocab_id, id)
 
         return self._get_answer(query)
 
@@ -275,7 +275,7 @@ class GettyProvider(VocabularyProvider):
                 VALUES ?Lang {gvp_lang:en gvp_lang:nl}
                   {?Subject xl:prefLabel [skosxl:literalForm ?Term; dcterms:language ?Lang]}
                           }
-                }""" % (self.getty + ":" + id, self.getty)
+                }""" % (self.vocab_id + ":" + id, self.vocab_id)
         print(query)
         concept = self._get_answer(query)
         answer = []
@@ -295,7 +295,7 @@ class AATProvider(GettyProvider):
     def __init__(self, metadata):
         """ Inherit functions of the getty provider using url http://vocab.getty.edu/aat
         """
-        GettyProvider.__init__(self, metadata, base_url='http://vocab.getty.edu/', getty='aat')
+        GettyProvider.__init__(self, metadata, base_url='http://vocab.getty.edu/', vocab_id='aat')
 
 
 class TGNProvider(GettyProvider):
@@ -307,4 +307,4 @@ class TGNProvider(GettyProvider):
     def __init__(self, metadata):
         """ Inherit functions of the getty provider using url http://vocab.getty.edu/tgn
         """
-        GettyProvider.__init__(self, metadata, base_url='http://vocab.getty.edu/', getty='tgn')
+        GettyProvider.__init__(self, metadata, base_url='http://vocab.getty.edu/', vocab_id='tgn')
