@@ -7,8 +7,7 @@ import logging
 from skosprovider.providers import VocabularyProvider
 from skosprovider_getty.utils import (
     getty_to_skos,
-    uri_to_id,
-    literal_to_str
+    uri_to_id
 )
 
 log = logging.getLogger(__name__)
@@ -181,7 +180,7 @@ class GettyProvider(VocabularyProvider):
         for result in r["results"]["bindings"]:
             uri = result["Subject"]["value"]
             if "Term" in result:
-                label = literal_to_str(result["Term"]["value"])
+                label = result["Term"]["value"]
             else:
                 label = "<not available>"
             item = {

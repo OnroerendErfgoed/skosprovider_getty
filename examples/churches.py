@@ -1,3 +1,4 @@
+#!/usr/bin/python
 # -*- coding: utf-8 -*-
 '''
 This script demonstrates using the AATProvider to get the concept of
@@ -15,9 +16,9 @@ lang = ['en', 'nl', 'es', 'de']
 print('Labels')
 print('------')
 for l in churches.labels:
-   print(l.language + ': ' + l.label.decode('utf-8') + ' [' + l.type + ']')
+   print(l.language + ': ' + l.label + ' [' + l.type + ']')
 
 print('Notes')
 print('-----')
 for n in churches.notes:
-    print(n.language + ': ' + n.note.decode('utf-8') + ' [' + n.type + ']')
+    print(n.language + ': ' + n.note + ' [' + n.type + ']')
