@@ -7,8 +7,7 @@ import logging
 from skosprovider.providers import VocabularyProvider
 from skosprovider_getty.utils import (
     getty_to_skos,
-    uri_to_id,
-    literal_to_str
+    uri_to_id
 )
 
 log = logging.getLogger(__name__)
@@ -42,17 +41,17 @@ class GettyProvider(VocabularyProvider):
                 is the default :class:`skosprovider_getty.providers.GettyProvider`
         """
         if not 'default_language' in metadata:
-            metadata['default_language'] = 'nl'
+            metadata['default_language'] = 'en'
         if 'base_url' in kwargs:
             self.base_url = kwargs['base_url']
         else:
             self.base_url = 'http://vocab.getty.edu/'
-        if 'getty' in kwargs:
-            self.getty = kwargs['getty']
+        if 'vocab_id' in kwargs:
+            self.vocab_id = kwargs['vocab_id']
         else:
-            self.getty = 'aat'
+            self.vocab_id = 'aat'
         if not 'url' in kwargs:
-            self.url = self.base_url + self.getty
+            self.url = self.base_url + self.vocab_id
         else:
             self.url = kwargs['url']
 
@@ -99,6 +98,61 @@ class GettyProvider(VocabularyProvider):
 
 
     def find(self, query):
+        '''Find concepts that match a certain query.
+
+        Currently query is expected to be a dict, so that complex queries can
+        be passed. You can use this dict to search for concepts or collections
+        with a certain label, with a certain type and for concepts that belong
+        to a certain collection.
+
+        .. code-block:: python
+
+            # Find anything that has a label of church.
+            provider.find({'label': 'church'}
+
+            # Find all concepts that are a part of collection 5.
+            provider.find({'type': 'concept', 'collection': {'id': 5})
+
+            # Find all concepts, collections or children of these
+            # that belong to collection 5.
+            provider.find({'collection': {'id': 5, 'depth': 'all'})
+
+        :param query: A dict that can be used to express a query. The following
+            keys are permitted:
+
+            * `label`: Search for something with this label value. An empty \
+                label is equal to searching for all concepts.
+            * `type`: Limit the search to certain SKOS elements. If not \
+                present `all` is assumed:
+
+                * `concept`: Only return :class:`skosprovider.skos.Concept` \
+                    instances.
+                * `collection`: Only return \
+                    :class:`skosprovider.skos.Collection` instances.
+                * `all`: Return both :class:`skosprovider.skos.Concept` and \
+                    :class:`skosprovider.skos.Collection` instances.
+            * `collection`: Search only for concepts belonging to a certain \
+                collection. This argument should be a dict with two keys:
+
+                * `id`: The id of a collection. Required.
+                * `depth`: Can be `members` or `all`. Optional. If not \
+                    present, `members` is assumed, meaning only concepts or \
+                    collections that are a direct member of the collection \
+                    should be considered. When set to `all`, this method \
+                    should return concepts and collections that are a member \
+                    of the collection or are a narrower concept of a member \
+                    of the collection.
+
+        :returns: A :class:`lst` of concepts and collections. Each of these
+            is a dict with the following keys:
+
+            * id: id within the conceptscheme
+            * uri: :term:`uri` of the concept or collection
+            * type: concept or collection
+            * label: A label to represent the concept or collection. It is \
+                determined by looking at the `**kwargs` parameter, the default \
+                language of the provider and finally falls back to `en`.
+        '''
         # #  interprete and validate query parameters (label, type and collection)
         # Label
         if 'label' in query:
@@ -129,9 +183,9 @@ class GettyProvider(VocabularyProvider):
         #build sparql query
         coll_x = ""
         if coll_id is not None and coll_depth == 'all':
-            coll_x = "gvp:broaderExtended " + self.getty + ":" + coll_id
+            coll_x = "gvp:broaderExtended " + self.vocab_id + ":" + coll_id
         elif coll_id is not None and coll_depth == 'members':
-            coll_x = "gvp:broader " + self.getty + ":" + coll_id
+            coll_x = "gvp:broader " + self.vocab_id + ":" + coll_id
 
 
         type_values = "(skos:Concept) (skos:Collection)"
@@ -147,14 +201,15 @@ class GettyProvider(VocabularyProvider):
                             VALUES ?Lang {gvp_lang:en gvp_lang:nl}
                   {?Subject xl:prefLabel [skosxl:literalForm ?Term; dcterms:language ?Lang]}
                           }
-            }""" % (type_values, _build_keywords(label), self.getty, coll_x)
-        print(query)
-        try:
-            return self._get_answer(query)
-        except:
-            return False
+            }""" % (type_values, _build_keywords(label), self.vocab_id, coll_x)
+
+        return self._get_answer(query)
+
 
     def get_all(self):
+        """
+        Not supported: This provider does not support this. The amount of results is too large
+        """
         warnings.warn(
             'This provider does not support this. The amount of results is too large',
             UserWarning
@@ -174,25 +229,28 @@ class GettyProvider(VocabularyProvider):
             * type: concept or collection
             * label: A label to represent the concept or collection.
         """
-        res = requests.get(self.base_url + "sparql.json", params={"query": query})
-        res.encoding = 'utf-8'
-        r = res.json()
-        d = {}
-        for result in r["results"]["bindings"]:
-            uri = result["Subject"]["value"]
-            if "Term" in result:
-                label = literal_to_str(result["Term"]["value"])
-            else:
-                label = "<not available>"
-            item = {
-            'id': result["Id"]["value"],
-            'uri': uri,
-            'type': result["Type"]["value"].rsplit('#', 1)[1],
-            'label': label
-            }
-            if uri not in d or self._get_language() == uri_to_id(result["Lang"]["value"]):
-                d[uri] = item
-        return list(d.values())
+        try:
+            res = requests.get(self.base_url + "sparql.json", params={"query": query})
+            res.encoding = 'utf-8'
+            r = res.json()
+            d = {}
+            for result in r["results"]["bindings"]:
+                uri = result["Subject"]["value"]
+                if "Term" in result:
+                    label = result["Term"]["value"]
+                else:
+                    label = "<not available>"
+                item = {
+                'id': result["Id"]["value"],
+                'uri': uri,
+                'type': result["Type"]["value"].rsplit('#', 1)[1],
+                'label': label
+                }
+                if uri not in d or self._get_language() == uri_to_id(result["Lang"]["value"]):
+                    d[uri] = item
+            return list(d.values())
+        except:
+            return False
 
     def _get_top(self, type='All'):
         """ Returns all top-level facets. The returned values depend on the given type:
@@ -215,8 +273,8 @@ class GettyProvider(VocabularyProvider):
                  OPTIONAL {
                  VALUES ?Lang {gvp_lang:en gvp_lang:nl}
                   {?Subject xl:prefLabel [skosxl:literalForm ?Term; dcterms:language ?Lang]}
-                          }}""" % (type_values, self.getty)
-        print(query)
+                          }}""" % (type_values, self.vocab_id)
+        log.debug(query)
         return self._get_answer(query)
 
     def get_top_concepts(self):
@@ -247,7 +305,7 @@ class GettyProvider(VocabularyProvider):
                 VALUES ?Lang {gvp_lang:en gvp_lang:nl}
                   {?Subject xl:prefLabel [skosxl:literalForm ?Term; dcterms:language ?Lang]}
                           }
-                }""" % (self.getty, broader, self.getty, id)
+                }""" % (self.vocab_id, broader, self.vocab_id, id)
 
         return self._get_answer(query)
 
@@ -275,8 +333,8 @@ class GettyProvider(VocabularyProvider):
                 VALUES ?Lang {gvp_lang:en gvp_lang:nl}
                   {?Subject xl:prefLabel [skosxl:literalForm ?Term; dcterms:language ?Lang]}
                           }
-                }""" % (self.getty + ":" + id, self.getty)
-        print(query)
+                }""" % (self.vocab_id + ":" + id, self.vocab_id)
+        log.debug(query)
         concept = self._get_answer(query)
         answer = []
         if len(concept) == 0:
@@ -295,16 +353,16 @@ class AATProvider(GettyProvider):
     def __init__(self, metadata):
         """ Inherit functions of the getty provider using url http://vocab.getty.edu/aat
         """
-        GettyProvider.__init__(self, metadata, base_url='http://vocab.getty.edu/', getty='aat')
+        GettyProvider.__init__(self, metadata, base_url='http://vocab.getty.edu/', vocab_id='aat')
 
 
 class TGNProvider(GettyProvider):
     """ The Getty Thesaurus of Geographic Names
-    A provider that can work with the GETTY GNT rdf files of
+    A provider that can work with the GETTY TGN rdf files of
     http://vocab.getty.edu/tgn
     """
 
     def __init__(self, metadata):
         """ Inherit functions of the getty provider using url http://vocab.getty.edu/tgn
         """
-        GettyProvider.__init__(self, metadata, base_url='http://vocab.getty.edu/', getty='tgn')
+        GettyProvider.__init__(self, metadata, base_url='http://vocab.getty.edu/', vocab_id='tgn')

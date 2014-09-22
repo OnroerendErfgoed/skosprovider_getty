@@ -59,8 +59,8 @@ class getty_to_skos():
             if Label.is_valid_type(type):
                 o = self._create_label(o, type)
             elif Note.is_valid_type(type):
-                if literal_to_str(o) not in note_uris:
-                    note_uris.append(literal_to_str(o))
+                if o.toPython() not in note_uris:
+                    note_uris.append(o.toPython())
                     o = self._create_note(o, type)
                 else:
                     o = None
@@ -74,36 +74,29 @@ class getty_to_skos():
         language = literal.language
         if language is None:
             return None
-        return Label(literal_to_str(literal), type, language)
+        return Label(literal.toPython(), type, language)
 
     def _create_note(self, uri, type):
         if not self.change_notes and '/rev/' in uri:
             return None
         else:
-            note = ''
+            note = u''
             language = 'en'
 
             # http://vocab.getty.edu/aat/scopeNote
             for s, p, o in self.graph.triples((uri, RDF.value, None)):
-                note += literal_to_str(o)
+                note += o.toPython()
                 language = o.language
 
             # for http://vocab.getty.edu/aat/rev/
             for s, p, o in self.graph.triples((uri, DC.type, None)):
-                note += literal_to_str(o)
+                note += o.toPython()
             for s, p, o in self.graph.triples((uri, DC.description, None)):
-                note += ': %s' % literal_to_str(o)
+                note += ': %s' % o.toPython()
             for s, p, o in self.graph.triples((uri, PROV.startedAtTime, None)):
-                note += ' at %s ' % literal_to_str(o)
+                note += ' at %s ' % o.toPython()
 
             return Note(note, type, language)
-
-def literal_to_str(literal):
-    # the literals are of different type in python 2.7 and python 3
-    if isinstance(literal, str):
-        return str(literal)
-    else:
-        return literal.encode('utf-8')
 
 def hierarchy_notetypes(list):
     # A getty scopeNote wil be of type skos.note and skos.scopeNote

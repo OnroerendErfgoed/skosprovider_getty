@@ -17,14 +17,14 @@ class GettyProviderTests(unittest.TestCase):
         self.assertEqual(concept['type'], 'concept')
         self.assertIsInstance(concept['labels'], list)
 
-        preflabels = [{'nl': 'kerken'}, {'de': 'kirchen (Gebäude)'}]
+        preflabels = [{'nl': 'kerken'}, {'de': u'kirchen (Gebäude)'}]
         preflabels_conc = [{label['language']: label['label']} for label in concept['labels']
                            if label['type'] == 'prefLabel']
         self.assertGreater(len(preflabels_conc), 0)
         for label in preflabels:
             self.assertIn(label, preflabels_conc)
 
-        altlabels = [{'nl': 'kerk'}, {'de': 'kirche (Gebäude)'}]
+        altlabels = [{'nl': 'kerk'}, {'de': u'kirche (Gebäude)'}]
         altlabels_conc = [{label['language']: label['label']} for label in concept['labels']
                           if label['type'] == 'altLabel']
         self.assertGreater(len(altlabels_conc), 0)
@@ -43,7 +43,7 @@ class GettyProviderTests(unittest.TestCase):
         self.assertEqual(collection['uri'], 'http://vocab.getty.edu/aat/300007473')
         self.assertEqual(collection['type'], 'collection')
         self.assertIsInstance(collection['labels'], list)
-        self.assertIn('<kerken naar vorm>', [label['label'] for label in collection['labels']
+        self.assertIn(u'<kerken naar vorm>', [label['label'] for label in collection['labels']
                                              if label['language'] == 'nl' and label['type'] == 'prefLabel'])
         self.assertEqual(len(collection['notes']), 0)
 
@@ -60,24 +60,24 @@ class GettyProviderTests(unittest.TestCase):
     def test_get_by_id_tgn(self):
         concept = TGNProvider({'id': 'TGN'}).get_by_id('1000063')
         self.assertEqual(concept['uri'], 'http://vocab.getty.edu/tgn/1000063')
-        self.assertIn('België', [label['label'] for label in concept['labels']
+        self.assertIn(u'België', [label['label'] for label in concept['labels']
                                  if label['language'] == 'nl' and label['type'] == 'prefLabel'])
 
     def test_get_all(self):
         self.assertFalse(TGNProvider({'id': 'TGN'}).get_all())
 
     def test_get_top_display(self):
-        top_TGN_display = TGNProvider({'id': 'TGN'}).get_top_display()
+        top_TGN_display = TGNProvider({'id': 'TGN', 'default_language': 'nl'}).get_top_display()
         self.assertIsInstance(top_TGN_display, list)
         self.assertGreater(len(top_TGN_display), 0)
         keys_first_display = top_TGN_display[0].keys()
         for key in ['id', 'type', 'label', 'uri']:
             self.assertIn(key, keys_first_display)
-        self.assertIn('World', [label['label'] for label in top_TGN_display])
-        top_AAT_display = AATProvider({'id': 'AAT'}).get_top_display()
+        self.assertIn(u'World', [label['label'] for label in top_TGN_display])
+        top_AAT_display = AATProvider({'id': 'AAT', 'default_language': 'nl'}).get_top_display()
         self.assertIsInstance(top_AAT_display, list)
         self.assertGreater(len(top_AAT_display), 0)
-        self.assertIn('Facet Stijlen en perioden', [label['label'] for label in top_AAT_display])
+        self.assertIn(u'Facet Stijlen en perioden', [label['label'] for label in top_AAT_display])
 
     def test_get_top_concepts(self):
         top_TGN_concepts = TGNProvider({'id': 'TGN'}).get_top_concepts()
@@ -91,7 +91,7 @@ class GettyProviderTests(unittest.TestCase):
         keys_first_display = childeren_tgn_belgie[0].keys()
         for key in ['id', 'type', 'label', 'uri']:
             self.assertIn(key, keys_first_display)
-        self.assertIn('Brussels Hoofdstedelijk Gewest', [label['label'] for label in childeren_tgn_belgie])
+        self.assertIn(u'Brussels Hoofdstedelijk Gewest', [label['label'] for label in childeren_tgn_belgie])
 
     def test_expand(self):
         all_childeren_churches = AATProvider({'id': 'AAT'}).expand('300007466')

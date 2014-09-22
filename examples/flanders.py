@@ -1,15 +1,15 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 '''
-This script demonstrates using the AATProvider to get the concept of
-Churches.
+This script demonstrates using the TGNProvider to get the concept of
+Flanders.
 '''
 
-from skosprovider_getty.providers import AATProvider
+from skosprovider_getty.providers import TGNProvider
 
-aat = AATProvider(metadata={'id': 'AAT'})
+aat = TGNProvider(metadata={'id': 'TGN'})
 
-churches = aat.get_by_id(300007466)
+churches = aat.get_by_id(7018236)
 
 lang = ['en', 'nl', 'es', 'de']
 
