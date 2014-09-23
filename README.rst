@@ -14,7 +14,7 @@ Supported Getty thesauri:
 .. image:: https://coveralls.io/repos/OnroerendErfgoed/skosprovider_getty/badge.png?branch=master
         :target: https://coveralls.io/r/OnroerendErfgoed/skosprovider_getty
 
-.. image:: https://readthedocs.org/projects/skosprovider_getty/badge/?version=latest
-        :target: https://readthedocs.org/projects/skosprovider_getty/?badge=latest
+.. image:: https://readthedocs.org/projects/skosprovider-getty/badge/?version=latest
+        :target: https://readthedocs.org/projects/skosprovider-getty/?badge=latest
 .. image:: https://badge.fury.io/py/skosprovider_getty.png
         :target: http://badge.fury.io/py/skosprovider_getty
