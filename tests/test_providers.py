@@ -85,7 +85,7 @@ class GettyProviderTests(unittest.TestCase):
         self.assertEqual(len(top_TGN_concepts), 0)
 
     def test_get_childeren_display(self):
-        childeren_tgn_belgie = TGNProvider({'id': 'TGN'}).get_children_display('1000063')
+        childeren_tgn_belgie = TGNProvider({'id': 'TGN', 'default_language': 'nl'}).get_children_display('1000063')
         self.assertIsInstance(childeren_tgn_belgie, list)
         self.assertGreater(len(childeren_tgn_belgie), 0)
         keys_first_display = childeren_tgn_belgie[0].keys()
@@ -95,14 +95,9 @@ class GettyProviderTests(unittest.TestCase):
 
     def test_expand(self):
         all_childeren_churches = AATProvider({'id': 'AAT'}).expand('300007466')
-        childeren_churches = AATProvider({'id': 'AAT'}).get_children_display('300007466')
         self.assertIsInstance(all_childeren_churches, list)
         self.assertGreater(len(all_childeren_churches), 0)
-        keys_first_display = all_childeren_churches[0].keys()
-        for key in ['id', 'type', 'label', 'uri']:
-            self.assertIn(key, keys_first_display)
-        self.assertIn('300007466', [concept['id'] for concept in all_childeren_churches])
-        self.assertGreater(len(all_childeren_churches), len(childeren_churches))
+        self.assertIn('300007466', all_childeren_churches)
 
     def test_expand_invalid(self):
         all_childeren_invalid = AATProvider({'id': 'AAT'}).expand('invalid')
@@ -110,7 +105,9 @@ class GettyProviderTests(unittest.TestCase):
 
     def test_expand_collection(self):
         all_childeren_churches_by_fuction = AATProvider({'id': 'AAT'}).expand('300007494')
-        self.assertNotIn('300007494', [concept['id'] for concept in all_childeren_churches_by_fuction])
+        self.assertIsInstance(all_childeren_churches_by_fuction, list)
+        self.assertGreater(len(all_childeren_churches_by_fuction), 0)
+        self.assertNotIn('300007494', all_childeren_churches_by_fuction)
 
     def test_find_without_label(self):
         r = AATProvider({'id': 'AAT'}).find({'type': 'concept', 'collection': {'id': '300007466', 'depth': 'all'}})
@@ -159,6 +156,29 @@ class GettyProviderTests(unittest.TestCase):
         self.assertGreater(len(r), 0)
         for res in r:
             self.assertEqual(res['type'], 'Concept')
+
+    def test_find_concepts_kerk(self):
+        r1 = AATProvider({'id': 'AAT'}).find({'label': 'kerk', 'type': 'concept'})
+        r2 = AATProvider({'id': 'AAT', 'default_language': 'en'}).find({'label': 'kirche', 'type': 'concept'})
+        r3 = AATProvider({'id': 'AAT', 'default_language': 'nl'}).find({'label': 'kerk', 'type': 'concept'})
+
+        self.assertIsInstance(r1, list)
+        self.assertIsInstance(r2, list)
+        self.assertIsInstance(r3, list)
+        self.assertGreater(len(r1), 0)
+        self.assertGreater(len(r2), 0)
+        self.assertGreater(len(r3), 0)
+        for res in r1:
+            self.assertIn('church', res['label'].lower())
+            self.assertEqual(res['type'], 'Concept')
+        for res in r2:
+            self.assertIn('church', res['label'].lower())
+            self.assertEqual(res['type'], 'Concept')
+        for res in r3:
+            self.assertIn('kerk', res['label'].lower())
+            self.assertEqual(res['type'], 'Concept')
+
+
 
     def test_find_member_collections_in_collection(self):
         r = AATProvider({'id': 'AAT'}).find({'label': 'church', 'type': 'collection', 'collection': {'id': '300007466', 'depth': 'members'}})
