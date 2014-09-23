@@ -6,8 +6,6 @@
 Welcome to skosprovider_getty's documentation!
 ==============================================
 
-Contents:
-
 .. toctree::
    :maxdepth: 2
 

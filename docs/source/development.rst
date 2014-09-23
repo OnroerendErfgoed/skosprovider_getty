@@ -3,10 +3,10 @@
 Development
 ===========
 
-skosprovider_getty is being developed by the 
+Skosprovider_getty is being developed by the 
 `Flanders Heritage Agency`_.
 
-Since we place a lot of importance of code quality, we expect to have a good 
+Since we place a lot of importance on code quality, we expect to have a good 
 amount of code coverage present and run frequent unit tests. All commits and
 pull requests will be tested with `Travis-ci`_. Code coverage is being 
 monitored with `Coveralls`_.
