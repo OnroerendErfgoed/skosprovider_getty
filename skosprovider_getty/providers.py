@@ -14,6 +14,8 @@ log = logging.getLogger(__name__)
 
 
 def _build_keywords(label):
+    if label is None:
+        return ""
     keyword_list = label.split(" ")
     keywords = ""
     for idx, item in enumerate(keyword_list):
@@ -22,7 +24,7 @@ def _build_keywords(label):
         else:
             keywords = keywords + item + " AND "
 
-    return "'" + keywords + "'"
+    return "luc:term '" + keywords + "';"
 
 class GettyProvider(VocabularyProvider):
     """A provider that can work with the GETTY rdf files of
@@ -155,10 +157,9 @@ class GettyProvider(VocabularyProvider):
         '''
         # #  interprete and validate query parameters (label, type and collection)
         # Label
+        label = None
         if 'label' in query:
             label = query['label']
-        if not label:
-            label = None
         # Type: 'collection','concept' or 'all'
         type_c = 'all'
         if 'type' in query:
@@ -178,14 +179,14 @@ class GettyProvider(VocabularyProvider):
                 coll_depth = coll['depth']
             if coll_depth not in ('members', 'all'):
                 raise ValueError(
-                    "collection - 'depth': only the following values are allowed: 'all', 'concept', 'collection'")
+                    "collection - 'depth': only the following values are allowed: 'members', 'all'")
 
         #build sparql query
         coll_x = ""
         if coll_id is not None and coll_depth == 'all':
-            coll_x = "gvp:broaderExtended " + self.vocab_id + ":" + coll_id
+            coll_x = "gvp:broaderExtended " + self.vocab_id + ":" + coll_id + ";"
         elif coll_id is not None and coll_depth == 'members':
-            coll_x = "gvp:broader " + self.vocab_id + ":" + coll_id
+            coll_x = "gvp:broader " + self.vocab_id + ":" + coll_id + ";"
 
 
         type_values = "((?Type = skos:Concept) || (?Type = skos:Collection))"
@@ -195,14 +196,13 @@ class GettyProvider(VocabularyProvider):
             type_values = "(?Type = skos:Collection)"
         query = """
             SELECT ?Subject ?Term ?Type ?Id ?Lang {
-            ?Subject rdf:type ?Type; dc:identifier ?Id; luc:term %s; skos:inScheme %s:; %s;.
+            ?Subject rdf:type ?Type; dc:identifier ?Id; %s  skos:inScheme %s:; %s.
                             OPTIONAL {
                             VALUES ?Lang {gvp_lang:en gvp_lang:nl}
                   {?Subject xl:prefLabel [skosxl:literalForm ?Term; dcterms:language ?Lang]}
                           }
             FILTER(%s && %s)
             }""" % (_build_keywords(label), self.vocab_id, coll_x, type_values, self._get_language_filter())
-
         return self._get_answer(query)
 
 

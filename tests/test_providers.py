@@ -112,31 +112,62 @@ class GettyProviderTests(unittest.TestCase):
         all_childeren_churches_by_fuction = AATProvider({'id': 'AAT'}).expand('300007494')
         self.assertNotIn('300007494', [concept['id'] for concept in all_childeren_churches_by_fuction])
 
+    def test_find_without_label(self):
+        r = AATProvider({'id': 'AAT'}).find({'type': 'concept', 'collection': {'id': '300007466', 'depth': 'all'}})
+        self.assertIsInstance(r, list)
+
+    def test_find_wrong_type(self):
+        self.assertRaises(ValueError, AATProvider({'id': 'AAT'}).find, {'type': 'collectie', 'collection': {'id': '300007466', 'depth': 'all'}})
+
+    def test_find_no_collection_id(self):
+        self.assertRaises(ValueError, AATProvider({'id': 'AAT'}).find, {'type': 'collection', 'collection': {'depth': 'all'}})
+
+    def test_find_wrong_collection_depth(self):
+        self.assertRaises(ValueError, AATProvider({'id': 'AAT'}).find, {'type': 'concept', 'collection': {'id': '300007466', 'depth': 'allemaal'}})
 
     def test_find_concepts_in_collection(self):
         r = AATProvider({'id': 'AAT'}).find({'label': 'church', 'type': 'concept', 'collection': {'id': '300007466', 'depth': 'all'}})
         self.assertIsInstance(r, list)
-        # self.assertEquals(len(r), 26)
-        print(len(r))
-        print(r)
+        self.assertGreater(len(r), 0)
+        for res in r:
+            self.assertEqual(res['type'], 'Concept')
+
+    def test_find_multiple_keywords(self):
+        r = AATProvider({'id': 'AAT'}).find({'label': 'church abbey', 'type': 'concept'})
+        self.assertIsInstance(r, list)
+        self.assertGreater(len(r), 0)
+        for res in r:
+            self.assertEqual(res['type'], 'Concept')
 
     def test_find_member_concepts_in_collection(self):
         r = AATProvider({'id': 'AAT'}).find({'label': 'church', 'type': 'concept', 'collection': {'id': '300007494', 'depth': 'members'}})
         self.assertIsInstance(r, list)
-        # self.assertEquals(len(r), 14)
-        print(len(r))
-        print(r)
+        self.assertGreater(len(r), 0)
+        for res in r:
+            self.assertEqual(res['type'], 'Concept')
 
     def test_find_collections_in_collection(self):
         r = AATProvider({'id': 'AAT'}).find({'label': 'church', 'type': 'collection', 'collection': {'id': '300007466', 'depth': 'all'}})
         self.assertIsInstance(r, list)
-        # self.assertEquals(len(r), 6)
-        print(len(r))
-        print(r)
+        self.assertGreater(len(r), 0)
+        for res in r:
+            self.assertEqual(res['type'], 'Collection')
+
+    def test_find_concepts(self):
+        r = AATProvider({'id': 'AAT'}).find({'label': 'church', 'type': 'concept'})
+        self.assertIsInstance(r, list)
+        self.assertGreater(len(r), 0)
+        for res in r:
+            self.assertEqual(res['type'], 'Concept')
 
     def test_find_member_collections_in_collection(self):
         r = AATProvider({'id': 'AAT'}).find({'label': 'church', 'type': 'collection', 'collection': {'id': '300007466', 'depth': 'members'}})
         self.assertIsInstance(r, list)
-        # self.assertEquals(len(r), 6)
-        print(len(r))
-        print(r)
+        self.assertGreater(len(r), 0)
+        for res in r:
+            self.assertEqual(res['type'], 'Collection')
+
+    def test_answer_wrong_query(self):
+        self.assertFalse(GettyProvider({'id': 'test'}, vocab_id='aat', url='http://vocab.getty.edu/aat')._get_answer("Wrong SPARQL query"))
+
+
