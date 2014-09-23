@@ -6,7 +6,7 @@ except ImportError:
     from distutils.core import setup
 
 here = os.path.abspath(os.path.dirname(__file__))
-README = open(os.path.join(here, 'README.md')).read()
+README = open(os.path.join(here, 'README.rst')).read()
 
 packages = [
     'skosprovider_getty'
