@@ -49,7 +49,7 @@ class GettyProviderTests(unittest.TestCase):
 
     def test_get_by_id_invalid(self):
         concept = AATProvider({'id': 'AAT'}).get_by_id('123')
-        self.assertFalse(concept)
+        self.assertIsNone(concept)
 
     def test_get_by_uri(self):
         # Default GettyProvider is an AAT provider

@@ -63,6 +63,8 @@ class GettyProvider(VocabularyProvider):
             graph.parse('%s/%s.rdf' % (self.url, id))
             # get the concept
             graph_to_skos = getty_to_skos(graph, change_notes).from_graph()
+            if len(graph_to_skos) == 0:
+                return None
             concept = graph_to_skos[0]
             return concept
 
@@ -71,7 +73,7 @@ class GettyProvider(VocabularyProvider):
         except Exception as err:
             if hasattr(err, 'code'):
                 if err.code == 404:
-                    return False
+                    return None
             else:
                 raise
 
@@ -288,9 +290,13 @@ class GettyProvider(VocabularyProvider):
         """
         return self._get_top()
 
-    def _get_children(self, id, extended=False):
+    def get_children_display(self, id):
+        """ Return a list of concepts or collections that should be displayed under this concept or collection.
 
-        broader = 'broaderExtended' if extended else 'broader'
+        :param str id: A concept or collection id.
+        :returns: A :class:`lst` of concepts and collections.
+        """
+        broader = 'broader'
         type_values = "((?Type = skos:Concept) || (?Type = skos:Collection))"
 
         query = """SELECT ?Subject ?Id ?Type ?Term (lang(?Term) as ?Lang)
@@ -304,14 +310,6 @@ class GettyProvider(VocabularyProvider):
                 }""" % (self.vocab_id, broader, self.vocab_id, id, type_values)
 
         return self._get_answer(query)
-
-    def get_children_display(self, id):
-        """ Return a list of concepts or collections that should be displayed under this concept or collection.
-
-        :param str id: A concept or collection id.
-        :returns: A :class:`lst` of concepts and collections.
-        """
-        return self._get_children(id)
 
     def expand(self, id):
         """ Expand a concept or collection to all it's narrower concepts.
