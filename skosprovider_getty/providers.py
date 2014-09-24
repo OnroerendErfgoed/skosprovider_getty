@@ -26,8 +26,8 @@ class GettyProvider(VocabularyProvider):
 
         :param (dict) metadata: metadata of the provider
         :param kwargs: arguments defining the provider.
-            * Typical arguments are  `base_url`, `getty` and `url`.
-                The `url` is a composition of the `base_url` and `getty`
+            * Typical arguments are  `base_url`, `vocab_id` and `url`.
+                The `url` is a composition of the `base_url` and `vocab_id`
             * The :class:`skosprovider_getty.providers.AATProvider`
                 is the default :class:`skosprovider_getty.providers.GettyProvider`
         """
