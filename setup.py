@@ -7,6 +7,7 @@ except ImportError:
 
 here = os.path.abspath(os.path.dirname(__file__))
 README = open(os.path.join(here, 'README.rst')).read()
+CHANGES = open(os.path.join(here, 'CHANGES.rst')).read()
 
 packages = [
     'skosprovider_getty'
@@ -22,7 +23,7 @@ setup(
     name='skosprovider_getty',
     version='0.1.0',
     description='Skosprovider implementation of the Getty Vocabularies',
-    long_description=README,
+    long_description=README + '\n\n' + CHANGES,
     packages=packages,
     include_package_data=True,
     install_requires=requires,

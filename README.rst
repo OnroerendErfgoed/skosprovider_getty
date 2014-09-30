@@ -2,7 +2,7 @@ skosprovider_getty
 ================
 
 `Skosprovider <http://skosprovider.readthedocs.org>`_ implementation of the 
-`Getty Vocabularies <http://vocab.getty.edu`_.
+`Getty Vocabularies <http://vocab.getty.edu>`_.
 
 Supported Getty thesauri:
 

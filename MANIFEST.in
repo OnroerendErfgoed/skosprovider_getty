@@ -1,1 +1,1 @@
-include README.md LICENSE HISTORY.rst
+include *.txt *.ini *.cfg *.rst *.md
