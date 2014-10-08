@@ -52,6 +52,21 @@ class GettyProviderTests(unittest.TestCase):
         concept = AATProvider({'id': 'AAT'}).get_by_id('123')
         self.assertFalse(concept)
 
+
+    def test_get_by_id_superordinates(self):
+        # Default GettyProvider is an AAT provider
+        concept = GettyProvider({'id': 'AAT'}).get_by_id('300007492')
+        concept = concept.__dict__
+        self.assertEqual(concept['id'], '300007492')
+        self.assertIn('300007466', concept['superordinates'])
+
+    def test_get_by_id_subOrdinateArrays(self):
+        # Default GettyProvider is an AAT provider
+        concept = GettyProvider({'id': 'AAT'}).get_by_id('300138225')
+        concept = concept.__dict__
+        self.assertEqual(concept['id'], '300138225')
+        self.assertIn('300126352', concept['subordinate_arrays'])
+
     def test_get_by_uri(self):
         # Default GettyProvider is an AAT provider
         concept = GettyProvider({'id': 'AAT'}).get_by_uri('http://vocab.getty.edu/aat/300007466')

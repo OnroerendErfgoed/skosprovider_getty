@@ -7,13 +7,9 @@ import logging
 from skosprovider.providers import VocabularyProvider
 from skosprovider_getty.utils import (
     getty_to_skos,
-    uri_to_id
-)
+    uri_to_id, uri_to_graph)
 
 log = logging.getLogger(__name__)
-
-
-
 
 class GettyProvider(VocabularyProvider):
     """A provider that can work with the GETTY rdf files of
@@ -58,24 +54,17 @@ class GettyProvider(VocabularyProvider):
         :return: corresponding :class:`skosprovider.skos.Concept` or :class:`skosprovider.skos.Concept`.
             Returns None if non-existing id
         """
-        graph = rdflib.Graph()
-        try:
-            graph.parse('%s/%s.rdf' % (self.url, id))
-            # get the concept
-            graph_to_skos = getty_to_skos(graph, change_notes).from_graph()
-            if len(graph_to_skos) == 0:
-                return None
-            concept = graph_to_skos[0]
-            return concept
+        graph = uri_to_graph('%s/%s.rdf' % (self.url, id))
+        if graph is False:
+            return False
+        # get the concept
+        concept_scheme = getty_to_skos().conceptscheme_from_uri(self.url)
+        graph_to_skos = getty_to_skos(concept_scheme, change_notes).things_from_graph(graph)
+        if len(graph_to_skos) == 0:
+            return False
+        c = graph_to_skos[0]
+        return c
 
-        # for python2.7 this is urllib2.HTTPError
-        # for python3 this is urllib.error.HTTPError
-        except Exception as err:
-            if hasattr(err, 'code'):
-                if err.code == 404:
-                    return False
-            else:
-                raise
 
     def get_by_uri(self, uri, change_notes=False):
         """ Get a :class:`skosprovider.skos.Concept` or :class:`skosprovider.skos.Collection` by uri
@@ -88,7 +77,6 @@ class GettyProvider(VocabularyProvider):
         id = uri_to_id(uri)
 
         return self.get_by_id(id, change_notes)
-
 
     def find(self, query):
         '''Find concepts that match a certain query.
@@ -338,7 +326,7 @@ class GettyProvider(VocabularyProvider):
         r = res.json()
 
         result = [result['Id']['value'] for result in r['results']['bindings']]
-        if len(result) == 0 and self.get_by_id(id) is None:
+        if len(result) == 0 and self.get_by_id(id) is False:
             return False
         return result
 
