@@ -13,6 +13,7 @@ class GettyProviderTests(unittest.TestCase):
 
     def test_get_by_id_concept(self):
         concept = AATProvider({'id': 'AAT'}).get_by_id('300007466', change_notes=True)
+        concept = concept.__dict__
         self.assertEqual(concept['uri'], 'http://vocab.getty.edu/aat/300007466')
         self.assertEqual(concept['type'], 'concept')
         self.assertIsInstance(concept['labels'], list)
@@ -54,11 +55,13 @@ class GettyProviderTests(unittest.TestCase):
     def test_get_by_uri(self):
         # Default GettyProvider is an AAT provider
         concept = GettyProvider({'id': 'AAT'}).get_by_uri('http://vocab.getty.edu/aat/300007466')
+        concept = concept.__dict__
         self.assertEqual(concept['uri'], 'http://vocab.getty.edu/aat/300007466')
         self.assertEqual(concept['id'], '300007466')
 
     def test_get_by_id_tgn(self):
         concept = TGNProvider({'id': 'TGN'}).get_by_id('1000063')
+        concept = concept.__dict__
         self.assertEqual(concept['uri'], 'http://vocab.getty.edu/tgn/1000063')
         self.assertIn(u'België', [label['label'] for label in concept['labels']
                                  if label['language'] == 'nl' and label['type'] == 'prefLabel'])
