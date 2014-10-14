@@ -226,13 +226,6 @@ class GettyProvider(VocabularyProvider):
                 'label': label,
                 'lang': result["Lang"]["value"]
                 }
-  # # Normalise the tag
-  #   broader_language_tag = None
-  #   if language != 'any':
-  #       language = tags.tag(language).format
-  #       broader_language_tag = tags.tag(language).language
-  #   pref = None
-  #   alt = None
 
                 if uri not in d:
                     d[uri] = item
