@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import rdflib
+from rdflib.term import URIRef
 
 from skosprovider.skos import (
     Concept,
@@ -13,7 +14,7 @@ from skosprovider.skos import (
 import logging
 log = logging.getLogger(__name__)
 
-from rdflib.namespace import RDF, SKOS, DC
+from rdflib.namespace import RDFS, RDF, SKOS, DC
 PROV = rdflib.Namespace('http://www.w3.org/ns/prov#')
 ISO = rdflib.Namespace('http://purl.org/iso25964/skos-thes#')
 
@@ -25,13 +26,20 @@ class getty_to_skos():
         self.graph = None
 
     def conceptscheme_from_uri(self, conceptscheme_uri):
-        self.graph = uri_to_graph('%s.rdf' % (conceptscheme_uri))
+        #todo: change the rdf-uri when available by Getty (the used url is a temporary fix, advised by Getty)
+        #self.graph = uri_to_graph('%s.rdf' % (conceptscheme_uri))
+        base_url = conceptscheme_uri.strip('/').rsplit('/', 1)[0]
+        subject = (conceptscheme_uri.strip('/') + "/").decode()
+        self.graph = uri_to_graph(base_url + '/download/rdf?uri=%s' % (subject))
+
         # get the conceptscheme
-        conceptscheme = ConceptScheme(conceptscheme_uri)
-        #todo rdf from conceptscheme cannot be found so labels and notes are not available
+        conceptscheme = ConceptScheme(subject)
+        conceptscheme.notes = []
+        conceptscheme.labels = []
         if self.graph is not False:
-            conceptscheme.labels = self._create_from_subject_typelist(conceptscheme_uri, Label.valid_types)
-            conceptscheme.notes = self._create_from_subject_typelist(conceptscheme_uri, hierarchy_notetypes(Note.valid_types))
+            for s, p, o in self.graph.triples((URIRef(subject), RDFS.label, None)):
+                label = Label(o.toPython(), "prefLabel", 'en')
+                conceptscheme.labels.append(label)
         return conceptscheme
 
     def things_from_graph(self, graph):
@@ -73,7 +81,7 @@ class getty_to_skos():
         member_list = []
         if len(arr) > 0:
             id = arr[0]
-            uri = self.conceptscheme.uri + '/' + id
+            uri = self.conceptscheme.uri + id
             graph = uri_to_graph(uri)
             for s, p, o in graph.triples((None, SKOS.member, None)):
                 o = uri_to_id(o)

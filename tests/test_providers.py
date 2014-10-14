@@ -175,6 +175,13 @@ class GettyProviderTests(unittest.TestCase):
         for res in r:
             self.assertEqual(res['type'], 'Concept')
 
+    def test_find_concepts_kerk_zh(self):
+        r = AATProvider({'id': 'AAT', 'default_language': 'zh'}).find({'label': 'kerk', 'type': 'concept'})
+        self.assertIsInstance(r, list)
+        self.assertGreater(len(r), 0)
+        for res in r:
+            self.assertEqual(res['type'], 'Concept')
+
     def test_find_concepts_kerk(self):
         r1 = AATProvider({'id': 'AAT'}).find({'label': 'kerk', 'type': 'concept'})
         r2 = AATProvider({'id': 'AAT', 'default_language': 'en'}).find({'label': 'kirche', 'type': 'concept'})

@@ -4,6 +4,7 @@ import rdflib
 import requests
 import warnings
 import logging
+from language_tags import tags
 from skosprovider.providers import VocabularyProvider
 from skosprovider_getty.utils import (
     getty_to_skos,
@@ -41,8 +42,8 @@ class GettyProvider(VocabularyProvider):
             self.url = self.base_url + self.vocab_id
         else:
             self.url = kwargs['url']
-
-        super(GettyProvider, self).__init__(metadata, **kwargs)
+        concept_scheme = getty_to_skos().conceptscheme_from_uri(self.url)
+        super(GettyProvider, self).__init__(metadata, concept_scheme=concept_scheme, **kwargs)
 
     def _get_language(self, **kwargs):
         return self.metadata['default_language']
@@ -58,11 +59,10 @@ class GettyProvider(VocabularyProvider):
         if graph is False:
             return False
         # get the concept
-        concept_scheme = getty_to_skos().conceptscheme_from_uri(self.url)
-        graph_to_skos = getty_to_skos(concept_scheme, change_notes).things_from_graph(graph)
-        if len(graph_to_skos) == 0:
+        things = getty_to_skos(self.concept_scheme, change_notes).things_from_graph(graph)
+        if len(things) == 0:
             return False
-        c = graph_to_skos[0]
+        c = things[0]
         return c
 
 
@@ -226,14 +226,23 @@ class GettyProvider(VocabularyProvider):
                 'label': label,
                 'lang': result["Lang"]["value"]
                 }
+  # # Normalise the tag
+  #   broader_language_tag = None
+  #   if language != 'any':
+  #       language = tags.tag(language).format
+  #       broader_language_tag = tags.tag(language).language
+  #   pref = None
+  #   alt = None
 
                 if uri not in d:
                     d[uri] = item
-                if d[uri]['lang'] == self._get_language():
+                if tags.tag(d[uri]['lang']).format == tags.tag(self._get_language()).format:
                     pass
-                elif item['lang'] == self._get_language():
+                elif tags.tag(item['lang']).format == tags.tag(self._get_language()).format:
                     d[uri] = item
-                elif item['lang'] == 'en':
+                elif tags.tag(item['lang']).language and (tags.tag(item['lang']).language.format == tags.tag(self._get_language()).language.format):
+                    d[uri] = item
+                elif tags.tag(item['lang']).format == 'en':
                     d[uri] = item
             return list(d.values())
         except:
