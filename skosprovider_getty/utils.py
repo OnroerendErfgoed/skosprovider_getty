@@ -29,7 +29,7 @@ class getty_to_skos():
         #todo: change the rdf-uri when available by Getty (the used url is a temporary fix, advised by Getty)
         #self.graph = uri_to_graph('%s.rdf' % (conceptscheme_uri))
         base_url = conceptscheme_uri.strip('/').rsplit('/', 1)[0]
-        subject = (conceptscheme_uri.strip('/') + "/").decode()
+        subject = conceptscheme_uri.strip('/') + "/"
         self.graph = uri_to_graph(base_url + '/download/rdf?uri=%s' % (subject))
 
         # get the conceptscheme
