@@ -6,7 +6,7 @@
   `TGN <http://vocab.getty.edu/tgn>`_ vocabularies.
 - Compatible with `SkosProvider 0.3.0 <http://skosprovider.readthedocs.org/en/0.3.0>`_.
 
-0.2.0 (2014-10-??)
+0.2.0 (2014-10-14)
 ------------------
 
 - Compatibile with `SkosProvider 0.4.0 <http://skosprovider.readthedocs.org/en/0.4.0>`_.

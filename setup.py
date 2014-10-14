@@ -21,7 +21,7 @@ requires = [
 
 setup(
     name='skosprovider_getty',
-    version='0.1.0',
+    version='0.2.0',
     description='Skosprovider implementation of the Getty Vocabularies',
     long_description=README + '\n\n' + CHANGES,
     packages=packages,
