@@ -1,6 +1,6 @@
 rdflib==4.1.2
 requests==2.4.1
-skosprovider==0.4.0
+skosprovider==0.4.2
 
 
 

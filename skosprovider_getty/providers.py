@@ -42,8 +42,8 @@ class GettyProvider(VocabularyProvider):
             self.url = self.base_url + self.vocab_id
         else:
             self.url = kwargs['url']
-        concept_scheme = getty_to_skos().conceptscheme_from_uri(self.url)
-        super(GettyProvider, self).__init__(metadata, concept_scheme=concept_scheme, **kwargs)
+        self.getty_to_skos = getty_to_skos(self.url)
+        super(GettyProvider, self).__init__(metadata, concept_scheme=self.getty_to_skos.conceptscheme, **kwargs)
 
     def _get_language(self, **kwargs):
         return self.metadata['default_language']
@@ -59,7 +59,7 @@ class GettyProvider(VocabularyProvider):
         if graph is False:
             return False
         # get the concept
-        things = getty_to_skos(self.concept_scheme, change_notes).things_from_graph(graph)
+        things = self.getty_to_skos.things_from_graph(graph)
         if len(things) == 0:
             return False
         c = things[0]

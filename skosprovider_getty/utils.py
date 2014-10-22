@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import rdflib
+from rdflib.graph import Graph
 from rdflib.term import URIRef
 
 from skosprovider.skos import (
@@ -17,21 +18,22 @@ log = logging.getLogger(__name__)
 from rdflib.namespace import RDFS, RDF, SKOS, DC
 PROV = rdflib.Namespace('http://www.w3.org/ns/prov#')
 ISO = rdflib.Namespace('http://purl.org/iso25964/skos-thes#')
+gvp = rdflib.Namespace('http://vocab.getty.edu/ontology#')
 
 class getty_to_skos():
 
-    def __init__(self, conceptscheme=None, change_notes=False):
+    def __init__(self, conceptscheme_uri, change_notes=False):
         self.change_notes = change_notes
-        self.conceptscheme = conceptscheme
+        self.conceptscheme = self._conceptscheme_from_uri(conceptscheme_uri)
         self.graph = None
+        self.subclasses =SubClasses(gvp)
+        self.subclasses.collect_subclasses(SKOS.Concept)
+        self.subclasses.collect_subclasses(SKOS.Collection)
 
-    def conceptscheme_from_uri(self, conceptscheme_uri):
-        #todo: change the rdf-uri when available by Getty (the used url is a temporary fix, advised by Getty)
-        #self.graph = uri_to_graph('%s.rdf' % (conceptscheme_uri))
+    def _conceptscheme_from_uri(self, conceptscheme_uri):
         base_url = conceptscheme_uri.strip('/').rsplit('/', 1)[0]
         subject = conceptscheme_uri.strip('/') + "/"
-        self.graph = uri_to_graph(base_url + '/download/rdf?uri=%s' % (subject))
-
+        self.graph = uri_to_graph('%s.rdf' % (subject))
         # get the conceptscheme
         conceptscheme = ConceptScheme(subject)
         conceptscheme.notes = []
@@ -45,7 +47,13 @@ class getty_to_skos():
     def things_from_graph(self, graph):
         self.graph = graph
         clist = []
-        for sub, pred, obj in graph.triples((None, RDF.type, SKOS.Concept)):
+        concept_graph = Graph()
+        collection_graph = Graph()
+        for sc in self.subclasses.get_subclasses(SKOS.Concept):
+            concept_graph += graph.triples((None, RDF.type, sc))
+        for sc in self.subclasses.get_subclasses(SKOS.Collection):
+            collection_graph += graph.triples((None, RDF.type, sc))
+        for sub, pred, obj in concept_graph.triples((None, RDF.type, None)):
             uri = str(sub)
             con = Concept(uri_to_id(uri), uri=uri)
             con.broader = self._create_from_subject_predicate(sub, SKOS.broader)
@@ -53,11 +61,14 @@ class getty_to_skos():
             con.related = self._create_from_subject_predicate(sub, SKOS.related)
             con.labels = self._create_from_subject_typelist(sub, Label.valid_types)
             con.notes = self._create_from_subject_typelist(sub, hierarchy_notetypes(Note.valid_types))
-            con.subordinate_arrays = self._get_members(self._create_from_subject_predicate(sub, ISO.subordinateArray))
+            for k in con.matches.keys():
+                con.matches[k] = self._create_from_subject_predicate(sub, URIRef(SKOS + k +'Match'))
+            con.subordinate_arrays = self._create_from_subject_predicate(sub, ISO.subordinateArray)
+            #con.subordinate_arrays = self._get_members(self._create_from_subject_predicate(sub, ISO.subordinateArray))
             con.concept_scheme = self.conceptscheme
             clist.append(con)
 
-        for sub, pred, obj in graph.triples((None, RDF.type, SKOS.Collection)):
+        for sub, pred, obj in collection_graph.triples((None, RDF.type, None)):
             uri = str(sub)
             col = Collection(uri_to_id(uri), uri=uri)
             col.members = self._create_from_subject_predicate(sub, SKOS.member)
@@ -76,18 +87,6 @@ class getty_to_skos():
             term = SKOS.term(p)
             list.extend(self._create_from_subject_predicate(subject, term, note_uris))
         return list
-
-    def _get_members(self, arr):
-        member_list = []
-        if len(arr) > 0:
-            id = arr[0]
-            uri = self.conceptscheme.uri + id
-            graph = uri_to_graph(uri)
-            for s, p, o in graph.triples((None, SKOS.member, None)):
-                o = uri_to_id(o)
-                if o:
-                    member_list.append(o)
-        return member_list
 
     def _create_from_subject_predicate(self, subject, predicate, note_uris=None):
         list = []
@@ -134,6 +133,47 @@ class getty_to_skos():
                 note += ' at %s ' % o.toPython()
 
             return Note(note, type, language)
+
+class SubClasses:
+    def __init__(self, namespace):
+        self.subclasses = {}
+        self.ontology_graphs = {}
+        self.namespace = namespace
+
+    def get_subclasses(self, clazz):
+        return self.subclasses[clazz]
+
+    def collect_subclasses(self, clazz):
+        if clazz not in self.subclasses:
+            self.subclasses[clazz] = []
+        if self.namespace not in self.ontology_graphs:
+            graph = rdflib.Graph()
+            result = graph.parse(self.namespace)
+            self.ontology_graphs[self.namespace] = graph
+        g = self.ontology_graphs[self.namespace]
+        for sub, pred, obj in g.triples((None, RDFS.subClassOf, None)):
+            self._is_subclass_of(sub, clazz)
+        return self.subclasses[clazz]
+
+    def _is_subclass_of(self, subject, clazz):
+        namespace = subject.split('#')[0] +"#"
+        if subject in self.subclasses[clazz]:
+            return True
+        if namespace not in self.ontology_graphs:
+            graph = rdflib.Graph()
+            result = graph.parse(namespace)
+            self.ontology_graphs[namespace] = graph
+        g = self.ontology_graphs[namespace]
+        for sub, pred, obj in g.triples((subject, RDFS.subClassOf, None)):
+            if obj in self.subclasses[clazz]:
+                self.subclasses[clazz].append(subject)
+                return True
+            if obj == clazz:
+                self.subclasses[clazz].append(subject)
+                return True
+            if self._is_subclass_of(obj, clazz):
+                return True
+        return False
 
 def hierarchy_notetypes(list):
     # A getty scopeNote wil be of type skos.note and skos.scopeNote
