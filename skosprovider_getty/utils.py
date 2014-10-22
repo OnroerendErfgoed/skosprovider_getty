@@ -148,7 +148,7 @@ class SubClasses:
             self.subclasses[clazz] = []
         if self.namespace not in self.ontology_graphs:
             graph = rdflib.Graph()
-            result = graph.parse(self.namespace)
+            result = graph.parse(str(self.namespace))
             self.ontology_graphs[self.namespace] = graph
         g = self.ontology_graphs[self.namespace]
         for sub, pred, obj in g.triples((None, RDFS.subClassOf, None)):
@@ -161,7 +161,7 @@ class SubClasses:
             return True
         if namespace not in self.ontology_graphs:
             graph = rdflib.Graph()
-            result = graph.parse(namespace)
+            result = graph.parse(str(namespace))
             self.ontology_graphs[namespace] = graph
         g = self.ontology_graphs[namespace]
         for sub, pred, obj in g.triples((subject, RDFS.subClassOf, None)):
