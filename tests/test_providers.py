@@ -41,6 +41,7 @@ class GettyProviderTests(unittest.TestCase):
 
         self.assertEqual(concept['id'], '300007466')
         #self.assertEqual(concept['broader'][0], '300007391')
+        print(concept)
         self.assertIn('300312247', concept['related'])
 
     def test_get_by_id_collection(self):
