@@ -109,7 +109,7 @@ class getty_to_skos():
     def _create_label(self, literal, type):
         language = literal.language
         if language is None:
-            return None
+            language = 'und'
         return Label(literal.toPython(), type, language)
 
     def _create_note(self, uri, type):

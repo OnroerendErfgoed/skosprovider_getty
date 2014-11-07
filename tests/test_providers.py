@@ -53,6 +53,11 @@ class GettyProviderTests(unittest.TestCase):
         #                                      if label['language'] == 'nl' and label['type'] == 'prefLabel'])
         self.assertEqual(len(collection['notes']), 0)
 
+    def test_get_by_id_language_und(self):
+        c = TGNProvider({'id': 'TGN'}).get_by_id('7008827')
+        c = c.__dict__
+        self.assertEqual(c['labels'][0].language, 'und')
+
     def test_get_by_id_invalid(self):
         concept = AATProvider({'id': 'AAT'}).get_by_id('123')
         self.assertFalse(concept)
