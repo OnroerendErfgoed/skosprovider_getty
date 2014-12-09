@@ -15,7 +15,8 @@ from skosprovider.skos import (
 import logging
 log = logging.getLogger(__name__)
 
-from rdflib.namespace import RDFS, RDF, SKOS, DC
+from rdflib.namespace import RDFS, RDF, SKOS, DC, Namespace
+
 PROV = rdflib.Namespace('http://www.w3.org/ns/prov#')
 ISO = rdflib.Namespace('http://purl.org/iso25964/skos-thes#')
 gvp = rdflib.Namespace('http://vocab.getty.edu/ontology#')
@@ -147,12 +148,16 @@ class SubClasses:
         if clazz not in self.subclasses:
             self.subclasses[clazz] = []
         if self.namespace not in self.ontology_graphs:
-            graph = rdflib.Graph()
-            result = graph.parse(str(self.namespace))
-            self.ontology_graphs[self.namespace] = graph
+            try:
+                graph = rdflib.Graph()
+                result = graph.parse(str(self.namespace), format="application/rdf+xml")
+                self.ontology_graphs[self.namespace] = graph
+            except:
+                self.ontology_graphs[self.namespace] = None
         g = self.ontology_graphs[self.namespace]
-        for sub, pred, obj in g.triples((None, RDFS.subClassOf, None)):
-            self._is_subclass_of(sub, clazz)
+        if not g is None:
+            for sub, pred, obj in g.triples((None, RDFS.subClassOf, None)):
+                self._is_subclass_of(sub, clazz)
         return self.subclasses[clazz]
 
     def _is_subclass_of(self, subject, clazz):
@@ -160,19 +165,23 @@ class SubClasses:
         if subject in self.subclasses[clazz]:
             return True
         if namespace not in self.ontology_graphs:
-            graph = rdflib.Graph()
-            result = graph.parse(str(namespace))
-            self.ontology_graphs[namespace] = graph
+            try:
+                graph = rdflib.Graph()
+                result = graph.parse(str(namespace), format="application/rdf+xml")
+                self.ontology_graphs[namespace] = graph
+            except:
+                self.ontology_graphs[namespace] = None
         g = self.ontology_graphs[namespace]
-        for sub, pred, obj in g.triples((subject, RDFS.subClassOf, None)):
-            if obj in self.subclasses[clazz]:
-                self.subclasses[clazz].append(subject)
-                return True
-            if obj == clazz:
-                self.subclasses[clazz].append(subject)
-                return True
-            if self._is_subclass_of(obj, clazz):
-                return True
+        if not g is None:
+            for sub, pred, obj in g.triples((subject, RDFS.subClassOf, None)):
+                if obj in self.subclasses[clazz]:
+                    self.subclasses[clazz].append(subject)
+                    return True
+                if obj == clazz:
+                    self.subclasses[clazz].append(subject)
+                    return True
+                if self._is_subclass_of(obj, clazz):
+                    return True
         return False
 
 def hierarchy_notetypes(list):
