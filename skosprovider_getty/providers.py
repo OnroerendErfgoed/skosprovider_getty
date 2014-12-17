@@ -1,14 +1,21 @@
-#!/usr/bin/python
 # -*- coding: utf-8 -*-
+'''
+This module contains classes that implement 
+:class:`skosprovider.providers.VocabularyProvider` against the LOD version of
+the Getty Vocabularies (AAT and TGN).
+'''
+
 import rdflib
 import requests
 import warnings
 import logging
+
 from language_tags import tags
 from skosprovider.providers import VocabularyProvider
 from skosprovider_getty.utils import (
     getty_to_skos,
-    uri_to_id, uri_to_graph)
+    uri_to_id, uri_to_graph
+)
 
 log = logging.getLogger(__name__)
 

@@ -1,5 +1,8 @@
-#!/usr/bin/python
 # -*- coding: utf-8 -*-
+
+'''
+This module contains utility functions for :mod:`skosprovider_getty`.
+'''
 
 import rdflib
 from rdflib.graph import Graph
@@ -198,6 +201,12 @@ def uri_to_id(uri):
     return uri.strip('/').rsplit('/', 1)[1]
 
 def uri_to_graph(uri):
+    '''
+    Request and parse the RDF living at a certain URI.
+
+    :param string uri: :term:`URI` for which we want to parse the RDF.
+    :rtype: rdflib.Graph
+    '''
     graph = rdflib.Graph()
     try:
         graph.parse(uri)
