@@ -16,6 +16,21 @@ Supported Getty thesauri:
 * The Getty Thesaurus of Geographic Names (TGN) by use of the 
   :class:`skosprovider_getty.providers.TGNProvider`.
 
+Installation
+============
+
+To be able to use this library you need to have a modern version of Python 
+installed. Currently we're supporting versions 2.7, 3.3 and 3.4 of Python.
+
+This easiest way to install this library is through pip or easy install:
+
+.. code-block:: bash    
+    
+    $ pip install skosprovider_getty
+
+This will download and install :mod:`skosprovider_getty` and a few libraries it 
+depends on. 
+
 Using the providers
 ===================
 
