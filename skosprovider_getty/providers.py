@@ -14,9 +14,7 @@ from requests.packages.urllib3.exceptions import ConnectionError
 from skosprovider.exceptions import ProviderUnavailableException
 from skosprovider.providers import VocabularyProvider
 from skosprovider_getty.utils import (
-    getty_to_skos,
-    uri_to_id, uri_to_graph
-)
+    uri_to_id, uri_to_graph, conceptscheme_from_uri, things_from_graph, get_subclasses)
 
 log = logging.getLogger(__name__)
 
@@ -50,8 +48,9 @@ class GettyProvider(VocabularyProvider):
             self.url = self.base_url + self.vocab_id
         else:
             self.url = kwargs['url']
-        self.getty_to_skos = getty_to_skos(self.url)
-        super(GettyProvider, self).__init__(metadata, concept_scheme=self.getty_to_skos.conceptscheme, **kwargs)
+        self.subclasses = get_subclasses()
+        concept_scheme = conceptscheme_from_uri(self.url)
+        super(GettyProvider, self).__init__(metadata, concept_scheme=concept_scheme, **kwargs)
 
     def _get_language(self, **kwargs):
         return self.metadata['default_language']
@@ -67,7 +66,7 @@ class GettyProvider(VocabularyProvider):
         if graph is False:
             return False
         # get the concept
-        things = self.getty_to_skos.things_from_graph(graph)
+        things = things_from_graph(graph, self.subclasses, self.concept_scheme)
         if len(things) == 0:
             return False
         c = things[0]

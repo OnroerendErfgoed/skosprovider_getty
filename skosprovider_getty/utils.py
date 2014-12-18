@@ -28,120 +28,117 @@ PROV = rdflib.Namespace('http://www.w3.org/ns/prov#')
 ISO = rdflib.Namespace('http://purl.org/iso25964/skos-thes#')
 gvp = rdflib.Namespace('http://vocab.getty.edu/ontology#')
 
-class getty_to_skos():
 
-    def __init__(self, conceptscheme_uri, change_notes=False):
-        self.change_notes = change_notes
-        self.conceptscheme = self._conceptscheme_from_uri(conceptscheme_uri)
-        self.graph = None
-        self.subclasses =SubClasses(gvp)
-        self.subclasses.collect_subclasses(SKOS.Concept)
-        self.subclasses.collect_subclasses(SKOS.Collection)
+def get_subclasses():
+    subclasses =SubClasses(gvp)
+    subclasses.collect_subclasses(SKOS.Concept)
+    subclasses.collect_subclasses(SKOS.Collection)
+    return subclasses
 
-    def _conceptscheme_from_uri(self, conceptscheme_uri):
-        base_url = conceptscheme_uri.strip('/').rsplit('/', 1)[0]
-        subject = conceptscheme_uri.strip('/') + "/"
-        self.graph = uri_to_graph('%s.rdf' % (subject))
-        # get the conceptscheme
-        conceptscheme = ConceptScheme(subject)
-        conceptscheme.notes = []
-        conceptscheme.labels = []
-        if self.graph is not False:
-            for s, p, o in self.graph.triples((URIRef(subject), RDFS.label, None)):
-                label = Label(o.toPython(), "prefLabel", 'en')
-                conceptscheme.labels.append(label)
+def conceptscheme_from_uri(conceptscheme_uri):
+    base_url = conceptscheme_uri.strip('/').rsplit('/', 1)[0]
+    subject = conceptscheme_uri.strip('/') + "/"
+    graph = uri_to_graph('%s.rdf' % (subject))
+    # get the conceptscheme
+    conceptscheme = ConceptScheme(subject)
+    conceptscheme.notes = []
+    conceptscheme.labels = []
+    if graph is not False:
+        for s, p, o in graph.triples((URIRef(subject), RDFS.label, None)):
+            label = Label(o.toPython(), "prefLabel", 'en')
+            conceptscheme.labels.append(label)
 
-        return conceptscheme
+    return conceptscheme
 
-    def things_from_graph(self, graph):
-        self.graph = graph
-        clist = []
-        concept_graph = Graph()
-        collection_graph = Graph()
-        for sc in self.subclasses.get_subclasses(SKOS.Concept):
-            concept_graph += graph.triples((None, RDF.type, sc))
-        for sc in self.subclasses.get_subclasses(SKOS.Collection):
-            collection_graph += graph.triples((None, RDF.type, sc))
-        for sub, pred, obj in concept_graph.triples((None, RDF.type, None)):
-            uri = str(sub)
-            con = Concept(uri_to_id(uri), uri=uri)
-            con.broader = self._create_from_subject_predicate(sub, SKOS.broader)
-            con.narrower = self._create_from_subject_predicate(sub, SKOS.narrower)
-            con.related = self._create_from_subject_predicate(sub, SKOS.related)
-            con.labels = self._create_from_subject_typelist(sub, Label.valid_types)
-            con.notes = self._create_from_subject_typelist(sub, hierarchy_notetypes(Note.valid_types))
-            for k in con.matches.keys():
-                con.matches[k] = self._create_from_subject_predicate(sub, URIRef(SKOS + k +'Match'))
-            con.subordinate_arrays = self._create_from_subject_predicate(sub, ISO.subordinateArray)
-            #con.subordinate_arrays = self._get_members(self._create_from_subject_predicate(sub, ISO.subordinateArray))
-            con.concept_scheme = self.conceptscheme
-            clist.append(con)
+def things_from_graph(graph, subclasses, conceptscheme):
+    graph = graph
+    clist = []
+    concept_graph = Graph()
+    collection_graph = Graph()
+    for sc in subclasses.get_subclasses(SKOS.Concept):
+        concept_graph += graph.triples((None, RDF.type, sc))
+    for sc in subclasses.get_subclasses(SKOS.Collection):
+        collection_graph += graph.triples((None, RDF.type, sc))
+    for sub, pred, obj in concept_graph.triples((None, RDF.type, None)):
+        uri = str(sub)
+        con = Concept(uri_to_id(uri), uri=uri)
+        con.broader = _create_from_subject_predicate(graph, sub, SKOS.broader)
+        con.narrower = _create_from_subject_predicate(graph, sub, SKOS.narrower)
+        con.related = _create_from_subject_predicate(graph, sub, SKOS.related)
+        con.labels = _create_from_subject_typelist(graph, sub, Label.valid_types)
+        con.notes = _create_from_subject_typelist(graph, sub, hierarchy_notetypes(Note.valid_types))
+        for k in con.matches.keys():
+            con.matches[k] = _create_from_subject_predicate(graph, sub, URIRef(SKOS + k +'Match'))
+        con.subordinate_arrays = _create_from_subject_predicate(graph, sub, ISO.subordinateArray)
+        #con.subordinate_arrays = _get_members(_create_from_subject_predicate(graph, sub, ISO.subordinateArray))
+        con.concept_scheme = conceptscheme
+        clist.append(con)
 
-        for sub, pred, obj in collection_graph.triples((None, RDF.type, None)):
-            uri = str(sub)
-            col = Collection(uri_to_id(uri), uri=uri)
-            col.members = self._create_from_subject_predicate(sub, SKOS.member)
-            col.labels = self._create_from_subject_typelist(sub, Label.valid_types)
-            col.notes = self._create_from_subject_typelist(sub, hierarchy_notetypes(Note.valid_types))
-            col.superordinates = self._create_from_subject_predicate(sub, ISO.superOrdinate)
-            col.concept_scheme = self.conceptscheme
-            clist.append(col)
+    for sub, pred, obj in collection_graph.triples((None, RDF.type, None)):
+        uri = str(sub)
+        col = Collection(uri_to_id(uri), uri=uri)
+        col.members = _create_from_subject_predicate(graph, sub, SKOS.member)
+        col.labels = _create_from_subject_typelist(graph, sub, Label.valid_types)
+        col.notes = _create_from_subject_typelist(graph, sub, hierarchy_notetypes(Note.valid_types))
+        col.superordinates = _create_from_subject_predicate(graph, sub, ISO.superOrdinate)
+        col.concept_scheme = conceptscheme
+        clist.append(col)
 
-        return clist
+    return clist
 
-    def _create_from_subject_typelist(self, subject, typelist):
-        list=[]
-        note_uris = []
-        for p in typelist:
-            term = SKOS.term(p)
-            list.extend(self._create_from_subject_predicate(subject, term, note_uris))
-        return list
+def _create_from_subject_typelist(graph, subject, typelist):
+    list=[]
+    note_uris = []
+    for p in typelist:
+        term = SKOS.term(p)
+        list.extend(_create_from_subject_predicate(graph, subject, term, note_uris))
+    return list
 
-    def _create_from_subject_predicate(self, subject, predicate, note_uris=None):
-        list = []
-        for s, p, o in self.graph.triples((subject, predicate, None)):
-            type = predicate.split('#')[-1]
-            if Label.is_valid_type(type):
-                o = self._create_label(o, type)
-            elif Note.is_valid_type(type):
-                if o.toPython() not in note_uris:
-                    note_uris.append(o.toPython())
-                    o = self._create_note(o, type)
-                else:
-                    o = None
+def _create_from_subject_predicate(graph, subject, predicate, note_uris=None):
+    list = []
+    for s, p, o in graph.triples((subject, predicate, None)):
+        type = predicate.split('#')[-1]
+        if Label.is_valid_type(type):
+            o = _create_label(o, type)
+        elif Note.is_valid_type(type):
+            if o.toPython() not in note_uris:
+                note_uris.append(o.toPython())
+                o = _create_note(graph, o, type, False)
             else:
-                o = uri_to_id(o)
-            if o:
-                list.append(o)
-        return list
-
-    def _create_label(self, literal, type):
-        language = literal.language
-        if language is None:
-            language = 'und'
-        return Label(literal.toPython(), type, language)
-
-    def _create_note(self, uri, type):
-        if not self.change_notes and '/rev/' in uri:
-            return None
+                o = None
         else:
-            note = u''
-            language = 'en'
+            o = uri_to_id(o)
+        if o:
+            list.append(o)
+    return list
 
-            # http://vocab.getty.edu/aat/scopeNote
-            for s, p, o in self.graph.triples((uri, RDF.value, None)):
-                note += o.toPython()
-                language = o.language
+def _create_label( literal, type):
+    language = literal.language
+    if language is None:
+        language = 'und'
+    return Label(literal.toPython(), type, language)
 
-            # for http://vocab.getty.edu/aat/rev/
-            for s, p, o in self.graph.triples((uri, DC.type, None)):
-                note += o.toPython()
-            for s, p, o in self.graph.triples((uri, DC.description, None)):
-                note += ': %s' % o.toPython()
-            for s, p, o in self.graph.triples((uri, PROV.startedAtTime, None)):
-                note += ' at %s ' % o.toPython()
+def _create_note(graph, uri, type, change_notes=False):
+    if not change_notes and '/rev/' in uri:
+        return None
+    else:
+        note = u''
+        language = 'en'
 
-            return Note(note, type, language)
+        # http://vocab.getty.edu/aat/scopeNote
+        for s, p, o in graph.triples((uri, RDF.value, None)):
+            note += o.toPython()
+            language = o.language
+
+        # for http://vocab.getty.edu/aat/rev/
+        for s, p, o in graph.triples((uri, DC.type, None)):
+            note += o.toPython()
+        for s, p, o in graph.triples((uri, DC.description, None)):
+            note += ': %s' % o.toPython()
+        for s, p, o in graph.triples((uri, PROV.startedAtTime, None)):
+            note += ' at %s ' % o.toPython()
+
+        return Note(note, type, language)
 
 class SubClasses:
     def __init__(self, namespace):
