@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-from rdflib.namespace import RDF, SKOS, RDFS, Namespace
+from rdflib.namespace import SKOS, Namespace
 
 from skosprovider_getty.providers import (
     AATProvider,
@@ -217,7 +217,8 @@ class GettyProviderTests(unittest.TestCase):
             self.assertEqual(res['type'], 'Collection')
 
     def test_answer_wrong_query(self):
-        self.assertFalse(GettyProvider({'id': 'test'}, vocab_id='aat', url='http://vocab.getty.edu/aat')._get_answer("Wrong SPARQL query"))
+        provider = GettyProvider({'id': 'test'}, vocab_id='aat', url='http://vocab.getty.edu/aat')
+        self.assertRaises(ValueError, provider._get_answer, "Wrong SPARQL query")
 
     def test_ontology_subclasses(self):
         subclasses = SubClasses(Namespace("http://vocab.getty.edu/ontology#"))

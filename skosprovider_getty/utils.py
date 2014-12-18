@@ -3,10 +3,14 @@
 '''
 This module contains utility functions for :mod:`skosprovider_getty`.
 '''
-
+try:
+    from urllib2 import URLError, HTTPError
+except ImportError:
+    from urllib.error import URLError, HTTPError
 import rdflib
 from rdflib.graph import Graph
 from rdflib.term import URIRef
+from skosprovider.exceptions import ProviderUnavailableException
 
 from skosprovider.skos import (
     Concept,
@@ -18,7 +22,7 @@ from skosprovider.skos import (
 import logging
 log = logging.getLogger(__name__)
 
-from rdflib.namespace import RDFS, RDF, SKOS, DC, Namespace
+from rdflib.namespace import RDFS, RDF, SKOS, DC
 
 PROV = rdflib.Namespace('http://www.w3.org/ns/prov#')
 ISO = rdflib.Namespace('http://purl.org/iso25964/skos-thes#')
@@ -46,6 +50,7 @@ class getty_to_skos():
             for s, p, o in self.graph.triples((URIRef(subject), RDFS.label, None)):
                 label = Label(o.toPython(), "prefLabel", 'en')
                 conceptscheme.labels.append(label)
+
         return conceptscheme
 
     def things_from_graph(self, graph):
@@ -200,23 +205,20 @@ def hierarchy_notetypes(list):
 def uri_to_id(uri):
     return uri.strip('/').rsplit('/', 1)[1]
 
+
 def uri_to_graph(uri):
     '''
-    Request and parse the RDF living at a certain URI.
-
-    :param string uri: :term:`URI` for which we want to parse the RDF.
+    :param string uri: :term:`URI` where the RDF data can be found.
     :rtype: rdflib.Graph
+    :raises skosprovider.exceptions.ProviderUnavailableException: if the
+        getty.edu services are down
     '''
     graph = rdflib.Graph()
     try:
         graph.parse(uri)
         return graph
-    # for python2.7 this is urllib2.HTTPError
-    # for python3 this is urllib.error.HTTPError
-    except Exception as err:
-        if hasattr(err, 'code'):
-            if err.code == 404:
-                return False
-        else:
-            raise
+    except HTTPError as e:
+        return False
+    except URLError as e:
+        raise ProviderUnavailableException("URI not available: %s" % uri)
 

@@ -5,12 +5,13 @@ This module contains classes that implement
 the Getty Vocabularies (AAT and TGN).
 '''
 
-import rdflib
 import requests
 import warnings
 import logging
 
 from language_tags import tags
+from requests.packages.urllib3.exceptions import ConnectionError
+from skosprovider.exceptions import ProviderUnavailableException
 from skosprovider.providers import VocabularyProvider
 from skosprovider_getty.utils import (
     getty_to_skos,
@@ -214,39 +215,43 @@ class GettyProvider(VocabularyProvider):
             * type: concept or collection
             * label: A label to represent the concept or collection.
         """
-        print(query)
+        request = self.base_url + "sparql.json"
         try:
-            res = requests.get(self.base_url + "sparql.json", params={"query": query})
-            res.encoding = 'utf-8'
-            r = res.json()
-            d = {}
-            for result in r["results"]["bindings"]:
-                uri = result["Subject"]["value"]
-                if "Term" in result:
-                    label = result["Term"]["value"]
-                else:
-                    label = "<not available>"
-                item = {
-                'id': result["Id"]["value"],
-                'uri': uri,
-                'type': result["Type"]["value"].rsplit('#', 1)[1],
-                'label': label,
-                'lang': result["Lang"]["value"]
-                }
+            res = requests.get(request, params={"query": query})
+        except ConnectionError as e:
+            raise ProviderUnavailableException("Request could not be executed - Request: %s - Params: %s" % (request, query))
+        if res.status_code == 404:
+            raise ProviderUnavailableException("Service not found (status_code 404) - Request: %s - Params: %s" % (request, query))
 
-                if uri not in d:
-                    d[uri] = item
-                if tags.tag(d[uri]['lang']).format == tags.tag(self._get_language()).format:
-                    pass
-                elif tags.tag(item['lang']).format == tags.tag(self._get_language()).format:
-                    d[uri] = item
-                elif tags.tag(item['lang']).language and (tags.tag(item['lang']).language.format == tags.tag(self._get_language()).language.format):
-                    d[uri] = item
-                elif tags.tag(item['lang']).format == 'en':
-                    d[uri] = item
-            return list(d.values())
-        except:
-            return False
+        res.encoding = 'utf-8'
+        r = res.json()
+        d = {}
+        for result in r["results"]["bindings"]:
+            uri = result["Subject"]["value"]
+            if "Term" in result:
+                label = result["Term"]["value"]
+            else:
+                label = "<not available>"
+            item = {
+            'id': result["Id"]["value"],
+            'uri': uri,
+            'type': result["Type"]["value"].rsplit('#', 1)[1],
+            'label': label,
+            'lang': result["Lang"]["value"]
+            }
+
+            if uri not in d:
+                d[uri] = item
+            if tags.tag(d[uri]['lang']).format == tags.tag(self._get_language()).format:
+                pass
+            elif tags.tag(item['lang']).format == tags.tag(self._get_language()).format:
+                d[uri] = item
+            elif tags.tag(item['lang']).language and (tags.tag(item['lang']).language.format == tags.tag(self._get_language()).language.format):
+                d[uri] = item
+            elif tags.tag(item['lang']).format == 'en':
+                d[uri] = item
+        return list(d.values())
+
 
     def _get_top(self, type='All'):
         """ Returns all top-level facets. The returned values depend on the given type:
