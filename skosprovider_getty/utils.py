@@ -20,6 +20,7 @@ from skosprovider.skos import (
     ConceptScheme)
 
 import logging
+
 log = logging.getLogger(__name__)
 
 from rdflib.namespace import RDFS, RDF, SKOS, DC
@@ -30,10 +31,11 @@ gvp = rdflib.Namespace('http://vocab.getty.edu/ontology#')
 
 
 def get_subclasses():
-    subclasses =SubClasses(gvp)
+    subclasses = SubClasses(gvp)
     subclasses.collect_subclasses(SKOS.Concept)
     subclasses.collect_subclasses(SKOS.Collection)
     return subclasses
+
 
 def conceptscheme_from_uri(conceptscheme_uri):
     base_url = conceptscheme_uri.strip('/').rsplit('/', 1)[0]
@@ -49,6 +51,7 @@ def conceptscheme_from_uri(conceptscheme_uri):
             conceptscheme.labels.append(label)
 
     return conceptscheme
+
 
 def things_from_graph(graph, subclasses, conceptscheme):
     graph = graph
@@ -68,9 +71,9 @@ def things_from_graph(graph, subclasses, conceptscheme):
         con.labels = _create_from_subject_typelist(graph, sub, Label.valid_types)
         con.notes = _create_from_subject_typelist(graph, sub, hierarchy_notetypes(Note.valid_types))
         for k in con.matches.keys():
-            con.matches[k] = _create_from_subject_predicate(graph, sub, URIRef(SKOS + k +'Match'))
+            con.matches[k] = _create_from_subject_predicate(graph, sub, URIRef(SKOS + k + 'Match'))
         con.subordinate_arrays = _create_from_subject_predicate(graph, sub, ISO.subordinateArray)
-        #con.subordinate_arrays = _get_members(_create_from_subject_predicate(graph, sub, ISO.subordinateArray))
+        # con.subordinate_arrays = _get_members(_create_from_subject_predicate(graph, sub, ISO.subordinateArray))
         con.concept_scheme = conceptscheme
         clist.append(con)
 
@@ -86,13 +89,15 @@ def things_from_graph(graph, subclasses, conceptscheme):
 
     return clist
 
+
 def _create_from_subject_typelist(graph, subject, typelist):
-    list=[]
+    list = []
     note_uris = []
     for p in typelist:
         term = SKOS.term(p)
         list.extend(_create_from_subject_predicate(graph, subject, term, note_uris))
     return list
+
 
 def _create_from_subject_predicate(graph, subject, predicate, note_uris=None):
     list = []
@@ -112,11 +117,13 @@ def _create_from_subject_predicate(graph, subject, predicate, note_uris=None):
             list.append(o)
     return list
 
-def _create_label( literal, type):
+
+def _create_label(literal, type):
     language = literal.language
     if language is None:
         language = 'und'
     return Label(literal.toPython(), type, language)
+
 
 def _create_note(graph, uri, type, change_notes=False):
     if not change_notes and '/rev/' in uri:
@@ -139,6 +146,7 @@ def _create_note(graph, uri, type, change_notes=False):
             note += ' at %s ' % o.toPython()
 
         return Note(note, type, language)
+
 
 class SubClasses:
     def __init__(self, namespace):
@@ -166,7 +174,7 @@ class SubClasses:
         return self.subclasses[clazz]
 
     def _is_subclass_of(self, subject, clazz):
-        namespace = subject.split('#')[0] +"#"
+        namespace = subject.split('#')[0] + "#"
         if subject in self.subclasses[clazz]:
             return True
         if namespace not in self.ontology_graphs:
@@ -189,6 +197,7 @@ class SubClasses:
                     return True
         return False
 
+
 def hierarchy_notetypes(list):
     # A getty scopeNote wil be of type skos.note and skos.scopeNote
     # To avoid doubles and to make sure the getty scopeNote will have type skos.scopeNote and not skos.note,
@@ -198,6 +207,7 @@ def hierarchy_notetypes(list):
         list.pop(index_note)
         list.append('note')
     return list
+
 
 def uri_to_id(uri):
     return uri.strip('/').rsplit('/', 1)[1]
@@ -215,7 +225,10 @@ def uri_to_graph(uri):
         graph.parse(uri)
         return graph
     except HTTPError as e:
-        return False
+        if e.code == 404:
+            return False
+        else:
+            raise ProviderUnavailableException("URI not available: %s" % uri)
     except URLError as e:
         raise ProviderUnavailableException("URI not available: %s" % uri)
 
