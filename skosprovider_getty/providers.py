@@ -10,7 +10,7 @@ import warnings
 import logging
 
 from language_tags import tags
-from requests.packages.urllib3.exceptions import ConnectionError
+from requests.exceptions import ConnectionError
 from skosprovider.exceptions import ProviderUnavailableException
 from skosprovider.providers import VocabularyProvider
 from skosprovider_getty.utils import (
