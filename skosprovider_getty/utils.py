@@ -3,10 +3,7 @@
 '''
 This module contains utility functions for :mod:`skosprovider_getty`.
 '''
-try:
-    from urllib2 import URLError, HTTPError
-except ImportError:
-    from urllib.error import URLError, HTTPError
+import requests
 import rdflib
 from rdflib.graph import Graph
 from rdflib.term import URIRef
@@ -222,13 +219,11 @@ def uri_to_graph(uri):
     '''
     graph = rdflib.Graph()
     try:
-        graph.parse(uri)
-        return graph
-    except HTTPError as e:
-        if e.code == 404:
-            return False
-        else:
-            raise ProviderUnavailableException("URI not available: %s" % uri)
-    except URLError as e:
+        res = requests.get(uri)
+    except requests.ConnectionError as e:
         raise ProviderUnavailableException("URI not available: %s" % uri)
+    if res.status_code == 404:
+        return False
+    graph.parse(data=res.content)
+    return graph
 
