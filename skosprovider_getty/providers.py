@@ -3,6 +3,11 @@
 This module contains classes that implement 
 :class:`skosprovider.providers.VocabularyProvider` against the LOD version of
 the Getty Vocabularies (AAT and TGN).
+
+.. note::
+    | At initialisation, the Getty providers will search which gvp-classes of the gvp-ontology are a subclass of skos-classes.
+    | This can cause a time delay of several seconds at startup.
+
 '''
 
 import requests

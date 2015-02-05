@@ -192,7 +192,7 @@ class GettyProviderTests(unittest.TestCase):
 
     def test_find_concepts_kerk_language(self):
         kwargs = {'language': 'nl'}
-        result = AATProvider({'id': 'AAT'}).find({'label': 'kerk', 'type': 'concept'}, language='nl')
+        result = AATProvider({'id': 'AAT'}).find({'label': 'kerk', 'type': 'concept'}, **kwargs)
         self.assertIsInstance(result, list)
         self.assertGreater(len(result), 0)
         labels = []
