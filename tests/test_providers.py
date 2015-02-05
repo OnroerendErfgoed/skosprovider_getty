@@ -1,5 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+import pytest
 from rdflib.namespace import SKOS, Namespace
 
 from skosprovider_getty.providers import (
@@ -40,8 +41,8 @@ class GettyProviderTests(unittest.TestCase):
         self.assertGreater(len(concept['notes']), 0)
 
         self.assertEqual(concept['id'], '300007466')
-        self.assertEqual(concept['broader'][0], '300007391')
-        print(concept)
+        #todo gvp:broader is not a subproperty of skos:broader anymore. This is the reason why there are no broader elements anymore belonging to the Concept...to be decided what to do...
+        #self.assertEqual(concept['broader'][0], '300007391')
         self.assertIn('300312247', concept['related'])
 
     def test_get_by_id_collection(self):
@@ -58,7 +59,8 @@ class GettyProviderTests(unittest.TestCase):
         concept = AATProvider({'id': 'AAT'}).get_by_id('123')
         self.assertFalse(concept)
 
-
+    #todo: no superordinates currently available in getty
+    @pytest.mark.xfail
     def test_get_by_id_superordinates(self):
         # Default GettyProvider is an AAT provider
         concept = GettyProvider({'id': 'AAT'}).get_by_id('300007492')
@@ -187,6 +189,17 @@ class GettyProviderTests(unittest.TestCase):
         self.assertGreater(len(r), 0)
         for res in r:
             self.assertEqual(res['type'], 'Concept')
+
+    def test_find_concepts_kerk_language(self):
+        kwargs = {'language': 'nl'}
+        result = AATProvider({'id': 'AAT'}).find({'label': 'kerk', 'type': 'concept'}, language='nl')
+        self.assertIsInstance(result, list)
+        self.assertGreater(len(result), 0)
+        labels = []
+        for res in result:
+            self.assertEqual(res['type'], 'Concept')
+            labels.append(res['label'])
+        self.assertIn("kerken", labels)
 
     def test_find_concepts_kerk(self):
         r1 = AATProvider({'id': 'AAT'}).find({'label': 'kerk', 'type': 'concept'})

@@ -53,6 +53,8 @@ class GettyProvider(VocabularyProvider):
         super(GettyProvider, self).__init__(metadata, concept_scheme=concept_scheme, **kwargs)
 
     def _get_language(self, **kwargs):
+        if 'language' in kwargs:
+            return kwargs['language']
         return self.metadata['default_language']
 
     def get_by_id(self, id, change_notes=False):
@@ -85,7 +87,7 @@ class GettyProvider(VocabularyProvider):
 
         return self.get_by_id(id, change_notes)
 
-    def find(self, query):
+    def find(self, query, **kwargs):
         '''Find concepts that match a certain query.
 
         Currently query is expected to be a dict, so that complex queries can
@@ -188,7 +190,7 @@ class GettyProvider(VocabularyProvider):
                           }
             FILTER(%s)
             }""" % (self._build_keywords(label), self.vocab_id, coll_x, type_values)
-        return self._get_answer(query)
+        return self._get_answer(query, **kwargs)
 
 
     def get_all(self):
@@ -201,7 +203,7 @@ class GettyProvider(VocabularyProvider):
         )
         return False
 
-    def _get_answer(self, query):
+    def _get_answer(self, query, **kwargs):
         # send request to getty
         """ Returns the results of the Sparql query to a :class:`lst` of concepts and collections.
             The return :class:`lst`  can be empty.
@@ -221,8 +223,8 @@ class GettyProvider(VocabularyProvider):
             raise ProviderUnavailableException("Request could not be executed - Request: %s - Params: %s" % (request, query))
         if res.status_code == 404:
             raise ProviderUnavailableException("Service not found (status_code 404) - Request: %s - Params: %s" % (request, query))
-
-        res.encoding = 'utf-8'
+        if not res.encoding:
+            res.encoding = 'utf-8'
         r = res.json()
         d = {}
         for result in r["results"]["bindings"]:
@@ -241,18 +243,18 @@ class GettyProvider(VocabularyProvider):
 
             if uri not in d:
                 d[uri] = item
-            if tags.tag(d[uri]['lang']).format == tags.tag(self._get_language()).format:
+            if tags.tag(d[uri]['lang']).format == tags.tag(self._get_language(**kwargs)).format:
                 pass
-            elif tags.tag(item['lang']).format == tags.tag(self._get_language()).format:
+            elif tags.tag(item['lang']).format == tags.tag(self._get_language(**kwargs)).format:
                 d[uri] = item
             elif tags.tag(item['lang']).language and (tags.tag(item['lang']).language.format == tags.tag(self._get_language()).language.format):
                 d[uri] = item
-            elif tags.tag(item['lang']).format == 'en':
+            elif tags.tag(item['lang']).format == tags.tag('en').format:
                 d[uri] = item
         return list(d.values())
 
 
-    def _get_top(self, type='All'):
+    def _get_top(self, type='All', **kwargs):
         """ Returns all top-level facets. The returned values depend on the given type:
             Concept or All (Concepts and Collections). Default All is used.
 
@@ -274,24 +276,24 @@ class GettyProvider(VocabularyProvider):
                           }
                 FILTER (%s)
                 }""" % (self.vocab_id, type_values)
-        return self._get_answer(query)
+        return self._get_answer(query, **kwargs)
 
-    def get_top_concepts(self):
+    def get_top_concepts(self, **kwargs):
         """  Returns all concepts that form the top-level of a display hierarchy.
 
         :return: A :class:`lst` of concepts.
         """
-        return self._get_top("concepts")
+        return self._get_top("concepts", **kwargs)
 
 
-    def get_top_display(self):
+    def get_top_display(self, **kwargs):
         """  Returns all concepts or collections that form the top-level of a display hierarchy.
 
         :return: A :class:`lst` of concepts and collections.
         """
-        return self._get_top()
+        return self._get_top(**kwargs)
 
-    def get_children_display(self, id):
+    def get_children_display(self, id, **kwargs):
         """ Return a list of concepts or collections that should be displayed under this concept or collection.
 
         :param str id: A concept or collection id.
@@ -310,7 +312,7 @@ class GettyProvider(VocabularyProvider):
                 FILTER(%s)
                 }""" % (self.vocab_id, broader, self.vocab_id, id, type_values)
 
-        return self._get_answer(query)
+        return self._get_answer(query, **kwargs)
 
     def expand(self, id):
         """ Expand a concept or collection to all it's narrower concepts.
