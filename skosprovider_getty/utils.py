@@ -7,6 +7,7 @@ import requests
 import rdflib
 from rdflib.graph import Graph
 from rdflib.term import URIRef
+from requests.packages.urllib3.exceptions import ConnectionError
 from skosprovider.exceptions import ProviderUnavailableException
 
 from skosprovider.skos import (
@@ -80,7 +81,7 @@ def things_from_graph(graph, subclasses, conceptscheme):
         col.members = _create_from_subject_predicate(graph, sub, SKOS.member)
         col.labels = _create_from_subject_typelist(graph, sub, Label.valid_types)
         col.notes = _create_from_subject_typelist(graph, sub, hierarchy_notetypes(Note.valid_types))
-        col.superordinates = _create_from_subject_predicate(graph, sub, ISO.superOrdinate)
+        col.superordinates = _get_super_ordinates(conceptscheme, sub)
         col.concept_scheme = conceptscheme
         clist.append(col)
 
@@ -93,6 +94,26 @@ def _create_from_subject_typelist(graph, subject, typelist):
     for p in typelist:
         term = SKOS.term(p)
         list.extend(_create_from_subject_predicate(graph, subject, term, note_uris))
+    return list
+
+
+def _get_super_ordinates(conceptscheme, sub):
+    list = []
+
+    query = """PREFIX ns:<%s>
+    SELECT * WHERE {?s iso-thes:subordinateArray ns:%s}""" % (conceptscheme.uri, uri_to_id(sub))
+    request = conceptscheme.uri.strip('/').rsplit('/', 1)[0] + "/sparql.json"
+    try:
+        res = requests.get(request, params={"query": query})
+    except ConnectionError as e:
+        raise ProviderUnavailableException("Request could not be executed - Request: %s - Params: %s" % (request, query))
+    if res.status_code == 404:
+        raise ProviderUnavailableException("Service not found (status_code 404) - Request: %s - Params: %s" % (request, query))
+    if not res.encoding:
+        res.encoding = 'utf-8'
+    r = res.json()
+    for result in r["results"]["bindings"]:
+        list.append(uri_to_id(result["s"]["value"]))
     return list
 
 

@@ -59,14 +59,12 @@ class GettyProviderTests(unittest.TestCase):
         concept = AATProvider({'id': 'AAT'}).get_by_id('123')
         self.assertFalse(concept)
 
-    #todo: no superordinates currently available in getty
-    @pytest.mark.xfail
     def test_get_by_id_superordinates(self):
         # Default GettyProvider is an AAT provider
-        concept = GettyProvider({'id': 'AAT'}).get_by_id('300007492')
-        concept = concept.__dict__
-        self.assertEqual(concept['id'], '300007492')
-        self.assertIn('300007466', concept['superordinates'])
+        collection = GettyProvider({'id': 'AAT'}).get_by_id('300138225-array')
+        collection = collection.__dict__
+        self.assertEqual(collection['id'], '300138225-array')
+        self.assertIn('300138225', collection['superordinates'])
 
     def test_get_by_id_subOrdinateArrays(self):
         # Default GettyProvider is an AAT provider
@@ -74,6 +72,7 @@ class GettyProviderTests(unittest.TestCase):
         concept = concept.__dict__
         self.assertEqual(concept['id'], '300138225')
         self.assertIn('300138225-array', concept['subordinate_arrays'])
+        #300126352
 
     def test_get_by_uri(self):
         # Default GettyProvider is an AAT provider
