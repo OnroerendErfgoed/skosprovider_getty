@@ -1,4 +1,4 @@
-0.2.1 (2015-03-??)
+0.2.1 (2015-03-10)
 ------------------
 
 - Introduce language support. Until now it was impossible to pass in a language
