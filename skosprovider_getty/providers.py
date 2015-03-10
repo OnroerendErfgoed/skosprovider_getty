@@ -198,7 +198,7 @@ class GettyProvider(VocabularyProvider):
         return self._get_answer(query, **kwargs)
 
 
-    def get_all(self):
+    def get_all(self, **kwargs):
         """
         Not supported: This provider does not support this. The amount of results is too large
         """

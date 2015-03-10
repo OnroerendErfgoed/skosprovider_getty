@@ -89,10 +89,12 @@ class GettyProviderTests(unittest.TestCase):
                                  if label['language'] == 'nl' and label['type'] == 'prefLabel'])
 
     def test_get_all(self):
-        self.assertFalse(TGNProvider({'id': 'TGN'}).get_all())
+        kwargs = {'language': 'nl'}
+        self.assertFalse(TGNProvider({'id': 'TGN'}).get_all(**kwargs))
 
     def test_get_top_display(self):
-        top_TGN_display = TGNProvider({'id': 'TGN', 'default_language': 'nl'}).get_top_display()
+        kwargs = {'language': 'nl'}
+        top_TGN_display = TGNProvider({'id': 'TGN', 'default_language': 'en'}).get_top_display(**kwargs)
         self.assertIsInstance(top_TGN_display, list)
         self.assertGreater(len(top_TGN_display), 0)
         keys_first_display = top_TGN_display[0].keys()
@@ -105,12 +107,14 @@ class GettyProviderTests(unittest.TestCase):
         self.assertIn(u'Facet Stijlen en perioden', [label['label'] for label in top_AAT_display])
 
     def test_get_top_concepts(self):
-        top_TGN_concepts = TGNProvider({'id': 'TGN'}).get_top_concepts()
+        kwargs = {'language': 'nl'}
+        top_TGN_concepts = TGNProvider({'id': 'TGN'}).get_top_concepts(**kwargs)
         self.assertIsInstance(top_TGN_concepts, list)
         self.assertEqual(len(top_TGN_concepts), 0)
 
     def test_get_childeren_display(self):
-        childeren_tgn_belgie = TGNProvider({'id': 'TGN', 'default_language': 'nl'}).get_children_display('1000063')
+        kwargs = {'language': 'nl'}
+        childeren_tgn_belgie = TGNProvider({'id': 'TGN', 'default_language': 'nl'}).get_children_display('1000063', **kwargs)
         self.assertIsInstance(childeren_tgn_belgie, list)
         self.assertGreater(len(childeren_tgn_belgie), 0)
         keys_first_display = childeren_tgn_belgie[0].keys()
