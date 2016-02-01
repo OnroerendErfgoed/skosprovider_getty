@@ -100,7 +100,7 @@ def things_from_graph(graph, subclasses, conceptscheme):
             sources = [],
             notes = _create_from_subject_typelist(graph, sub, hierarchy_notetypes(Note.valid_types)),
             members = _create_from_subject_predicate(graph, sub, SKOS.member),
-            col.superordinates = _get_super_ordinates(conceptscheme, sub)
+            superordinates = _get_super_ordinates(conceptscheme, sub)
         )
         clist.append(col)
 
