@@ -36,18 +36,28 @@ def get_subclasses():
 
 
 def conceptscheme_from_uri(conceptscheme_uri):
-    base_url = conceptscheme_uri.strip('/').rsplit('/', 1)[0]
-    subject = conceptscheme_uri.strip('/') + "/"
-    graph = uri_to_graph('%s.rdf' % (subject))
+    '''
+    Read a SKOS Conceptscheme from a :term:`URI`
+
+    :param string conceptscheme_uri: URI of the conceptscheme.
+    :rtype: skosprovider.skos.ConceptScheme
+    '''
+
     # get the conceptscheme
-    conceptscheme = ConceptScheme(subject)
-    conceptscheme.notes = []
-    conceptscheme.labels = []
+    graph = uri_to_graph('%s.rdf' % (conceptscheme_uri))
+
+    notes = []
+    labels = []
     if graph is not False:
         for s, p, o in graph.triples((URIRef(subject), RDFS.label, None)):
             label = Label(o.toPython(), "prefLabel", 'en')
-            conceptscheme.labels.append(label)
+            labels.append(label)
 
+    conceptscheme = ConceptScheme(
+        conceptscheme_uri,
+        labels=labels,
+        notes=notes
+    )
     return conceptscheme
 
 
