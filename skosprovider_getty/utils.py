@@ -49,7 +49,7 @@ def conceptscheme_from_uri(conceptscheme_uri):
     notes = []
     labels = []
     if graph is not False:
-        for s, p, o in graph.triples((URIRef(subject), RDFS.label, None)):
+        for s, p, o in graph.triples((URIRef(conceptscheme_uri), RDFS.label, None)):
             label = Label(o.toPython(), "prefLabel", 'en')
             labels.append(label)
 
