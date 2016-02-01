@@ -21,7 +21,7 @@ requires = [
 
 setup(
     name='skosprovider_getty',
-    version='0.2.1',
+    version='0.3.0.dev0',
     description='Skosprovider implementation of the Getty Vocabularies',
     long_description=README + '\n\n' + CHANGES,
     packages=packages,
@@ -37,6 +37,7 @@ setup(
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3.3',
         'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: 3.5',
     ],
     author='Flanders Heritage Agency',
     author_email='ict@onroerenderfgoed.be',
