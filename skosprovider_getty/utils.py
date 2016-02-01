@@ -44,6 +44,8 @@ def conceptscheme_from_uri(conceptscheme_uri):
     '''
 
     # get the conceptscheme
+    # ensure it only ends in one slash
+    conceptscheme_uri = conceptscheme_uri.strip('/') + '/'
     graph = uri_to_graph('%s.rdf' % (conceptscheme_uri))
 
     notes = []
@@ -97,8 +99,8 @@ def things_from_graph(graph, subclasses, conceptscheme):
             uri=uri,
             concept_scheme = conceptscheme,
             labels = _create_from_subject_typelist(graph, sub, Label.valid_types),
-            sources = [],
             notes = _create_from_subject_typelist(graph, sub, hierarchy_notetypes(Note.valid_types)),
+            sources = [],
             members = _create_from_subject_predicate(graph, sub, SKOS.member),
             superordinates = _get_super_ordinates(conceptscheme, sub)
         )
@@ -117,12 +119,13 @@ def _create_from_subject_typelist(graph, subject, typelist):
 
 
 def _get_super_ordinates(conceptscheme, sub):
-    list = []
+    ret = []
 
     query = """PREFIX ns:<%s>
     SELECT * WHERE {?s iso-thes:subordinateArray ns:%s}""" % (conceptscheme.uri, uri_to_id(sub))
     request = conceptscheme.uri.strip('/').rsplit('/', 1)[0] + "/sparql.json"
     try:
+#        res = requests.get(request, params={"query": query, "implicit": 'true'})
         res = requests.get(request, params={"query": query})
     except ConnectionError as e:
         raise ProviderUnavailableException("Request could not be executed - Request: %s - Params: %s" % (request, query))
@@ -132,8 +135,8 @@ def _get_super_ordinates(conceptscheme, sub):
         res.encoding = 'utf-8'
     r = res.json()
     for result in r["results"]["bindings"]:
-        list.append(uri_to_id(result["s"]["value"]))
-    return list
+        ret.append(uri_to_id(result["s"]["value"]))
+    return ret
 
 
 def _create_from_subject_predicate(graph, subject, predicate, note_uris=None):

@@ -21,7 +21,6 @@ from skosprovider.providers import VocabularyProvider
 from skosprovider_getty.utils import (
     uri_to_id, uri_to_graph, conceptscheme_from_uri, things_from_graph, get_subclasses)
 
-log = logging.getLogger(__name__)
 
 class GettyProvider(VocabularyProvider):
     """A provider that can work with the GETTY rdf files of

@@ -15,6 +15,7 @@ global clazzes, ontologies
 clazzes = []
 ontologies = {}
 
+
 class GettyProviderTests(unittest.TestCase):
 
     def test_get_by_id_concept(self):
@@ -62,9 +63,8 @@ class GettyProviderTests(unittest.TestCase):
     def test_get_by_id_superordinates(self):
         # Default GettyProvider is an AAT provider
         collection = GettyProvider({'id': 'AAT'}).get_by_id('300138225-array')
-        collection = collection.__dict__
-        self.assertEqual(collection['id'], '300138225-array')
-        self.assertIn('300138225', collection['superordinates'])
+        assert collection.id == '300138225-array'
+        assert '300138225' in collection.superordinates
 
     def test_get_by_id_subOrdinateArrays(self):
         # Default GettyProvider is an AAT provider
