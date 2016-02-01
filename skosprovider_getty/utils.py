@@ -72,27 +72,36 @@ def things_from_graph(graph, subclasses, conceptscheme):
         collection_graph += graph.triples((None, RDF.type, sc))
     for sub, pred, obj in concept_graph.triples((None, RDF.type, None)):
         uri = str(sub)
-        con = Concept(uri_to_id(uri), uri=uri)
-        con.broader = _create_from_subject_predicate(graph, sub, SKOS.broader)
-        con.narrower = _create_from_subject_predicate(graph, sub, SKOS.narrower)
-        con.related = _create_from_subject_predicate(graph, sub, SKOS.related)
-        con.labels = _create_from_subject_typelist(graph, sub, Label.valid_types)
-        con.notes = _create_from_subject_typelist(graph, sub, hierarchy_notetypes(Note.valid_types))
-        for k in con.matches.keys():
+        matches = {}
+        for k in Concept.matchtypes:
             con.matches[k] = _create_from_subject_predicate(graph, sub, URIRef(SKOS + k + 'Match'))
-        con.subordinate_arrays = _create_from_subject_predicate(graph, sub, ISO.subordinateArray)
-        # con.subordinate_arrays = _get_members(_create_from_subject_predicate(graph, sub, ISO.subordinateArray))
-        con.concept_scheme = conceptscheme
+        con = Concept(
+            uri_to_id(uri),
+            uri=uri,
+            concept_scheme = conceptscheme,
+            labels = _create_from_subject_typelist(graph, sub, Label.valid_types),
+            notes = _create_from_subject_typelist(graph, sub, hierarchy_notetypes(Note.valid_types)),
+            sources = [],
+            broader = _create_from_subject_predicate(graph, sub, SKOS.broader),
+            narrower = _create_from_subject_predicate(graph, sub, SKOS.narrower),
+            related = _create_from_subject_predicate(graph, sub, SKOS.related),
+            subordinate_arrays = _create_from_subject_predicate(graph, sub, ISO.subordinateArray),
+            matches=matches
+        )
         clist.append(con)
 
     for sub, pred, obj in collection_graph.triples((None, RDF.type, None)):
         uri = str(sub)
-        col = Collection(uri_to_id(uri), uri=uri)
-        col.members = _create_from_subject_predicate(graph, sub, SKOS.member)
-        col.labels = _create_from_subject_typelist(graph, sub, Label.valid_types)
-        col.notes = _create_from_subject_typelist(graph, sub, hierarchy_notetypes(Note.valid_types))
-        col.superordinates = _get_super_ordinates(conceptscheme, sub)
-        col.concept_scheme = conceptscheme
+        col = Collection(
+            uri_to_id(uri),
+            uri=uri,
+            concept_scheme = conceptscheme,
+            labels = _create_from_subject_typelist(graph, sub, Label.valid_types),
+            sources = [],
+            notes = _create_from_subject_typelist(graph, sub, hierarchy_notetypes(Note.valid_types)),
+            members = _create_from_subject_predicate(graph, sub, SKOS.member),
+            col.superordinates = _get_super_ordinates(conceptscheme, sub)
+        )
         clist.append(col)
 
     return clist
