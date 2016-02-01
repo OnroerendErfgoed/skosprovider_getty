@@ -74,7 +74,7 @@ def things_from_graph(graph, subclasses, conceptscheme):
         uri = str(sub)
         matches = {}
         for k in Concept.matchtypes:
-            con.matches[k] = _create_from_subject_predicate(graph, sub, URIRef(SKOS + k + 'Match'))
+            matches[k] = _create_from_subject_predicate(graph, sub, URIRef(SKOS + k + 'Match'))
         con = Concept(
             uri_to_id(uri),
             uri=uri,
