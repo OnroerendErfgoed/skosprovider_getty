@@ -6,9 +6,9 @@ skosprovider_getty
 
 Supported Getty thesauri:
 
- * `Art & Architecture Thesaurus (AAT) <http://vocab.getty.edu/aat>`_
- * `The Getty Thesaurus of Geographic Names (TGN) <http://vocab.getty.edu/tgn>`_
- * `Union List of Artist Names (ULAN) <http://vocab.getty.edu/ulan>`_
+* `Art & Architecture Thesaurus (AAT) <http://vocab.getty.edu/aat>`_
+* `The Getty Thesaurus of Geographic Names (TGN) <http://vocab.getty.edu/tgn>`_
+* `Union List of Artist Names (ULAN) <http://vocab.getty.edu/ulan>`_
 
 .. image:: https://travis-ci.org/OnroerendErfgoed/skosprovider_getty.png?branch=master
         :target: https://travis-ci.org/OnroerendErfgoed/skosprovider_getty
