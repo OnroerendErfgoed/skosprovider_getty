@@ -262,3 +262,9 @@ class ULANProviderTests(unittest.TestCase):
         res = ulan.find({'label': 'braem'})
         assert any([a for a in res if a['id'] == '500082691'])
 
+    def test_ulan_search_braem_order_by_id(self):
+        ulan = ULANProvider({'id': 'ULAN'})
+        res = ulan.find({'label': 'braem'}, sort='id')
+        assert ['500082691', '500331524'] == [a['id'] for a in res]
+        res = ulan.find({'label': 'braem'}, sort='label', sort_order='desc')
+        assert ['500331524', '500082691'] == [a['id'] for a in res]

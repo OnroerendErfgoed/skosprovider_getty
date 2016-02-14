@@ -194,8 +194,11 @@ class GettyProvider(VocabularyProvider):
                           }
             FILTER(%s)
             }""" % (self._build_keywords(label), self.vocab_id, coll_x, type_values)
-        return self._get_answer(query, **kwargs)
-
+        ret= self._get_answer(query, **kwargs)
+        language = self._get_language(**kwargs)
+        sort = self._get_sort(**kwargs)
+        sort_order = self._get_sort_order(**kwargs)
+        return self._sort(ret, sort, language, sort_order == 'desc')
 
     def get_all(self, **kwargs):
         """
@@ -280,7 +283,11 @@ class GettyProvider(VocabularyProvider):
                           }
                 FILTER (%s)
                 }""" % (self.vocab_id, type_values)
-        return self._get_answer(query, **kwargs)
+        ret= self._get_answer(query, **kwargs)
+        language = self._get_language(**kwargs)
+        sort = self._get_sort(**kwargs)
+        sort_order = self._get_sort_order(**kwargs)
+        return self._sort(ret, sort, language, sort_order == 'desc')
 
     def get_top_concepts(self, **kwargs):
         """  Returns all concepts that form the top-level of a display hierarchy.
@@ -316,7 +323,11 @@ class GettyProvider(VocabularyProvider):
                 FILTER(%s)
                 }""" % (self.vocab_id, broader, self.vocab_id, id, type_values)
 
-        return self._get_answer(query, **kwargs)
+        ret= self._get_answer(query, **kwargs)
+        language = self._get_language(**kwargs)
+        sort = self._get_sort(**kwargs)
+        sort_order = self._get_sort_order(**kwargs)
+        return self._sort(ret, sort, language, sort_order == 'desc')
 
     def expand(self, id):
         """ Expand a concept or collection to all it's narrower concepts.
@@ -349,21 +360,26 @@ class GettyProvider(VocabularyProvider):
             return False
         return result
 
-    # def _get_language_filter(self):
-    #     return "(lang(?Term)='en' || lang(?Term)='" + self._get_language() + "')"
-
     def _build_keywords(self, label):
-            if label is None:
-                return ""
-            keyword_list = label.split(" ")
-            keywords = ""
-            for idx, item in enumerate(keyword_list):
-                if idx + 1 == len(keyword_list):
-                    keywords = keywords + item
-                else:
-                    keywords = keywords + item + " AND "
+        if label is None:
+            return ""
+        keyword_list = label.split(" ")
+        keywords = ""
+        for idx, item in enumerate(keyword_list):
+            if idx + 1 == len(keyword_list):
+                keywords = keywords + item
+            else:
+                keywords = keywords + item + " AND "
 
-            return "luc:term '" + keywords + "';"
+        return "luc:term '" + keywords + "';"
+
+    def _sort(self, items, sort, language='en', reverse=False):
+        if sort is None:
+            sort = 'id'
+        if sort == 'sortlabel':
+            sort='label'
+        items.sort(key=lambda item: item[sort], reverse=reverse)
+        return items
 
 
 class AATProvider(GettyProvider):
