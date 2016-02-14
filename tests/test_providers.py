@@ -6,6 +6,7 @@ from rdflib.namespace import SKOS, Namespace
 from skosprovider_getty.providers import (
     AATProvider,
     TGNProvider,
+    ULANProvider,
     GettyProvider
 )
 import unittest
@@ -242,3 +243,21 @@ class GettyProviderTests(unittest.TestCase):
         self.assertEqual(len(list_concept_subclasses), 7)
         list_collection_subclasses = subclasses.collect_subclasses(SKOS.Collection)
         self.assertEqual(len(list_collection_subclasses), 4)
+
+class ULANProviderTests:
+
+    def test_ulan_exists(self):
+        ulan = ULANProvider({'id': 'ULAN'})
+        assert isinstance(ulan, ULANProvider)
+
+    def test_ulan_get_braem(self):
+        ulan = ULANProvider({'id': 'ULAN'})
+        braem = ulan.get_by_id(500082691)
+        assert braem.id == 500082691
+        assert 'Braem' in braem.label
+
+    def test_ulan_search_braem(self):
+        ulan = ULANProvider({'id': 'ULAN'})
+        res = ulan.find({'label': 'braem'})
+        assert any([a for a in res if a.id == 500082691])
+

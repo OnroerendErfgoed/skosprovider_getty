@@ -388,3 +388,16 @@ class TGNProvider(GettyProvider):
         """ Inherit functions of the getty provider using url http://vocab.getty.edu/tgn
         """
         GettyProvider.__init__(self, metadata, base_url='http://vocab.getty.edu/', vocab_id='tgn')
+
+
+class ULANProvider(GettyProvider):
+    """ Union List of Artist Names
+
+    A provider that can work with the GETTY ULAN rdf files of
+    http://vocab.getty.edu/ulan
+    """
+
+    def __init__(self, metadata):
+        """ Inherit functions of the getty provider using url http://vocab.getty.edu/ulan
+        """
+        GettyProvider.__init__(self, metadata, base_url='http://vocab.getty.edu/', vocab_id='ulan')
