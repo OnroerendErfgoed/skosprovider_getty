@@ -4,6 +4,7 @@
 - Upgrade to skosprovider 0.6.0. (#13)
 - Add support for the `ULAN <http://vocab.getty.edu/ulan>`_ vocabulary. (#22)
 - Add support for sorting. (#24)
+- Allow configuring the requests session in use. (#25)
 
 0.2.1 (2015-03-10)
 ------------------
