@@ -35,7 +35,7 @@ def get_subclasses():
     return subclasses
 
 
-def conceptscheme_from_uri(conceptscheme_uri):
+def conceptscheme_from_uri(conceptscheme_uri, **kwargs):
     '''
     Read a SKOS Conceptscheme from a :term:`URI`
 
@@ -46,7 +46,8 @@ def conceptscheme_from_uri(conceptscheme_uri):
     # get the conceptscheme
     # ensure it only ends in one slash
     conceptscheme_uri = conceptscheme_uri.strip('/') + '/'
-    graph = uri_to_graph('%s.rdf' % (conceptscheme_uri))
+    s = kwargs.get('session', requests.Session())
+    graph = uri_to_graph('%s.rdf' % (conceptscheme_uri), session=s)
 
     notes = []
     labels = []
@@ -63,7 +64,8 @@ def conceptscheme_from_uri(conceptscheme_uri):
     return conceptscheme
 
 
-def things_from_graph(graph, subclasses, conceptscheme):
+def things_from_graph(graph, subclasses, conceptscheme, **kwargs):
+    s = kwargs.get('session', requests.Session())
     graph = graph
     clist = []
     concept_graph = Graph()
@@ -102,7 +104,7 @@ def things_from_graph(graph, subclasses, conceptscheme):
             notes = _create_from_subject_typelist(graph, sub, hierarchy_notetypes(Note.valid_types)),
             sources = [],
             members = _create_from_subject_predicate(graph, sub, SKOS.member),
-            superordinates = _get_super_ordinates(conceptscheme, sub)
+            superordinates = _get_super_ordinates(conceptscheme, sub, session=s)
         )
         clist.append(col)
 
@@ -118,15 +120,15 @@ def _create_from_subject_typelist(graph, subject, typelist):
     return list
 
 
-def _get_super_ordinates(conceptscheme, sub):
+def _get_super_ordinates(conceptscheme, sub, **kwargs):
     ret = []
 
     query = """PREFIX ns:<%s>
     SELECT * WHERE {?s iso-thes:subordinateArray ns:%s}""" % (conceptscheme.uri, uri_to_id(sub))
     request = conceptscheme.uri.strip('/').rsplit('/', 1)[0] + "/sparql.json"
+    s = kwargs.get('session', requests.Session())
     try:
-#        res = requests.get(request, params={"query": query, "implicit": 'true'})
-        res = requests.get(request, params={"query": query})
+        res = s.get(request, params={"query": query})
     except ConnectionError as e:
         raise ProviderUnavailableException("Request could not be executed - Request: %s - Params: %s" % (request, query))
     if res.status_code == 404:
@@ -253,16 +255,17 @@ def uri_to_id(uri):
     return uri.strip('/').rsplit('/', 1)[1]
 
 
-def uri_to_graph(uri):
+def uri_to_graph(uri, **kwargs):
     '''
     :param string uri: :term:`URI` where the RDF data can be found.
-    :rtype: rdflib.Graph
+    :rtype: rdflib.Graph or `False` if the URI does not exist
     :raises skosprovider.exceptions.ProviderUnavailableException: if the
         getty.edu services are down
     '''
+    s = kwargs.get('session', requests.Session())
     graph = rdflib.Graph()
     try:
-        res = requests.get(uri)
+        res = s.get(uri)
     except requests.ConnectionError as e:
         raise ProviderUnavailableException("URI not available: %s" % uri)
     if res.status_code == 404:

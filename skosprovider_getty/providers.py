@@ -53,7 +53,8 @@ class GettyProvider(VocabularyProvider):
         else:
             self.url = kwargs['url']
         self.subclasses = get_subclasses()
-        concept_scheme = conceptscheme_from_uri(self.url)
+        self.session = kwargs.get('session', requests.Session())
+        concept_scheme = conceptscheme_from_uri(self.url, session=self.session)
         super(GettyProvider, self).__init__(metadata, concept_scheme=concept_scheme, **kwargs)
 
     def _get_language(self, **kwargs):
@@ -68,7 +69,7 @@ class GettyProvider(VocabularyProvider):
         :return: corresponding :class:`skosprovider.skos.Concept` or :class:`skosprovider.skos.Concept`.
             Returns None if non-existing id
         """
-        graph = uri_to_graph('%s/%s.rdf' % (self.url, id))
+        graph = uri_to_graph('%s/%s.rdf' % (self.url, id), session=self.session)
         if graph is False:
             return False
         # get the concept
@@ -225,7 +226,7 @@ class GettyProvider(VocabularyProvider):
         """
         request = self.base_url + "sparql.json"
         try:
-            res = requests.get(request, params={"query": query})
+            res = self.session.get(request, params={"query": query})
         except ConnectionError as e:
             raise ProviderUnavailableException("Request could not be executed - Request: %s - Params: %s" % (request, query))
         if res.status_code == 404:
@@ -351,7 +352,7 @@ class GettyProvider(VocabularyProvider):
                 """ % (self.vocab_id, self.vocab_id + ":" + id, id, self.vocab_id)
 
         print (query)
-        res = requests.get(self.base_url + "sparql.json", params={"query": query})
+        res = self.session.get(self.base_url + "sparql.json", params={"query": query})
         res.encoding = 'utf-8'
         r = res.json()
 
@@ -388,10 +389,16 @@ class AATProvider(GettyProvider):
     http://vocab.getty.edu/aat
     """
 
-    def __init__(self, metadata):
+    def __init__(self, metadata, **kwargs):
         """ Inherit functions of the getty provider using url http://vocab.getty.edu/aat
         """
-        GettyProvider.__init__(self, metadata, base_url='http://vocab.getty.edu/', vocab_id='aat')
+        GettyProvider.__init__(
+            self,
+            metadata,
+            base_url='http://vocab.getty.edu/',
+            vocab_id='aat',
+            **kwargs
+        )
 
 
 class TGNProvider(GettyProvider):
@@ -400,10 +407,16 @@ class TGNProvider(GettyProvider):
     http://vocab.getty.edu/tgn
     """
 
-    def __init__(self, metadata):
+    def __init__(self, metadata, **kwargs):
         """ Inherit functions of the getty provider using url http://vocab.getty.edu/tgn
         """
-        GettyProvider.__init__(self, metadata, base_url='http://vocab.getty.edu/', vocab_id='tgn')
+        GettyProvider.__init__(
+            self,
+            metadata,
+            base_url='http://vocab.getty.edu/',
+            vocab_id='tgn',
+            **kwargs
+        )
 
 
 class ULANProvider(GettyProvider):
@@ -413,7 +426,13 @@ class ULANProvider(GettyProvider):
     http://vocab.getty.edu/ulan
     """
 
-    def __init__(self, metadata):
+    def __init__(self, metadata, **kwargs):
         """ Inherit functions of the getty provider using url http://vocab.getty.edu/ulan
         """
-        GettyProvider.__init__(self, metadata, base_url='http://vocab.getty.edu/', vocab_id='ulan')
+        GettyProvider.__init__(
+            self,
+            metadata,
+            base_url='http://vocab.getty.edu/',
+            vocab_id='ulan',
+            **kwargs
+        )

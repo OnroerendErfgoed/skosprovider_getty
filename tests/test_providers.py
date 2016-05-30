@@ -19,6 +19,12 @@ ontologies = {}
 
 class GettyProviderTests(unittest.TestCase):
 
+    def test_set_custom_session(self):
+        import requests
+        sess = requests.Session()
+        provider = AATProvider({'id': 'AAT'}, session=sess)
+        self.assertEqual(sess, provider.session)
+
     def test_get_by_id_concept(self):
         concept = AATProvider({'id': 'AAT'}).get_by_id('300007466', change_notes=True)
         concept = concept.__dict__
