@@ -14,14 +14,14 @@ packages = [
 ]
 
 requires = [
-    'skosprovider>=0.5.0',
+    'skosprovider>=0.6.0',
     'requests',
     'rdflib'
 ]
 
 setup(
     name='skosprovider_getty',
-    version='0.3.0.dev0',
+    version='0.3.0',
     description='Skosprovider implementation of the Getty Vocabularies',
     long_description=README + '\n\n' + CHANGES,
     packages=packages,
