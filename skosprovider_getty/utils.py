@@ -164,7 +164,12 @@ def _create_label(literal, type):
     language = literal.language
     if language is None:
         language = 'und'
-    return Label(literal.toPython(), type, language)
+    try:
+        l = Label(literal.toPython(), type, language)
+    except ValueError as e:
+        log.warn(e)
+        l = label(literal.toPython(), type, 'und')
+    return l
 
 
 def _create_note(graph, uri, type, change_notes=False):

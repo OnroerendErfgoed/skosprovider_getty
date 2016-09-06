@@ -1,3 +1,10 @@
+0.3.1 (2016-09-??)
+------------------
+
+- Handle a bug with private language tags. Currently not recognised by the
+  language_tags library. The Getty services do use them. When encountered, we
+  fall back to the undeterminded language. (#26)
+
 0.3.0 (2016-08-11)
 ------------------
 
