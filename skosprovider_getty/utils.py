@@ -18,7 +18,6 @@ from skosprovider.skos import (
     ConceptScheme)
 
 import logging
-
 log = logging.getLogger(__name__)
 
 from rdflib.namespace import RDFS, RDF, SKOS, DC
@@ -168,7 +167,7 @@ def _create_label(literal, type):
         l = Label(literal.toPython(), type, language)
     except ValueError as e:
         log.warn(e)
-        l = label(literal.toPython(), type, 'und')
+        l = Label(literal.toPython(), type, 'und')
     return l
 
 
