@@ -1,4 +1,4 @@
-0.3.1 (2016-09-??)
+0.3.1 (2016-09-14)
 ------------------
 
 - Handle a bug with private language tags. Currently not recognised by the

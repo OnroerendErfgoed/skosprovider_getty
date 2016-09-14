@@ -11,10 +11,12 @@ of them.
 
 Supported Getty thesauri:
 
-* The Art & Architecture Thesaurus (AAT) by use of the 
+* The `Art & Architecture Thesaurus (AAT)` by use of the 
   :class:`skosprovider_getty.providers.AATProvider`.
-* The Getty Thesaurus of Geographic Names (TGN) by use of the 
+* The `Getty Thesaurus of Geographic Names (TGN)` by use of the 
   :class:`skosprovider_getty.providers.TGNProvider`.
+* The `Union List of Artist Names (ULAN)` by use of the
+  :class:`skosprovider_getty.providers.ULANProvider`.
 
 Installation
 ============
