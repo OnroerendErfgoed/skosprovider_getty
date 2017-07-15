@@ -2,7 +2,7 @@
 import unittest
 import rdflib
 from skosprovider.exceptions import ProviderUnavailableException
-from skosprovider_getty.utils import uri_to_graph
+from skosprovider_getty.utils import uri_to_graph, SubClassCollector
 
 
 class UtilsTests(unittest.TestCase):
@@ -24,3 +24,9 @@ class UtilsTests(unittest.TestCase):
     def test_uri_to_graph_error(self):
         uri = 'http://teeezssst.teeteest.test/aat55/300zzz7466.rdf'
         self.assertRaises(ProviderUnavailableException, uri_to_graph, uri)
+
+    def test_collect_subclasses(self):
+        from rdflib.namespace import SKOS
+        subclasses = SubClassCollector(rdflib.Namespace("http://vocab.getty.edu/ontology#"))
+        list_concept_subclasses = subclasses.collect_subclasses(SKOS.Concept)
+        self.assertEqual(len(list_concept_subclasses), 8)

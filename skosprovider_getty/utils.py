@@ -24,15 +24,7 @@ from rdflib.namespace import RDFS, RDF, SKOS, DC
 
 PROV = rdflib.Namespace('http://www.w3.org/ns/prov#')
 ISO = rdflib.Namespace('http://purl.org/iso25964/skos-thes#')
-gvp = rdflib.Namespace('http://vocab.getty.edu/ontology#')
-
-
-def get_subclasses():
-    subclasses = SubClasses(gvp)
-    subclasses.collect_subclasses(SKOS.Concept)
-    subclasses.collect_subclasses(SKOS.Collection)
-    return subclasses
-
+GVP = rdflib.Namespace('http://vocab.getty.edu/ontology#')
 
 def conceptscheme_from_uri(conceptscheme_uri, **kwargs):
     '''
@@ -194,18 +186,41 @@ def _create_note(graph, uri, type, change_notes=False):
         return Note(note, type, language)
 
 
-class SubClasses:
+class SubClassCollector:
+    '''
+    A utility class to collect all the subclasses of a certain Class from an ontology file.
+    '''
     def __init__(self, namespace):
-        self.subclasses = {}
         self.ontology_graphs = {}
         self.namespace = namespace
+        self.init_skos()
+
+    def init_skos(self):
+        self.subclasses = {}
+        self.subclasses[SKOS.Concept] = [
+            SKOS.Concept,
+            GVP.Concept,
+            GVP.PhysPlaceConcept,
+            GVP.PhysAdminPlaceConcept,
+            GVP.AdminPlaceConcept,
+            GVP.PersonConcept,
+            GVP.UnknownPersonConcept,
+            GVP.GroupConcept
+        ]
+        self.subclasses[SKOS.Collection] = [
+            SKOS.Collection,
+            SKOS.OrderedCollection,
+            ISO.ThesaurusArray,
+            GVP.Hierarchy,
+            GVP.Facet,
+            GVP.GuideTerm
+        ]
 
     def get_subclasses(self, clazz):
         return self.subclasses[clazz]
 
     def collect_subclasses(self, clazz):
-        if clazz not in self.subclasses:
-            self.subclasses[clazz] = []
+        self.subclasses[clazz] = [clazz]
         if self.namespace not in self.ontology_graphs:
             try:
                 graph = rdflib.Graph()

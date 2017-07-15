@@ -1,3 +1,10 @@
+0.4.0 (2017-??-??)
+------------------
+
+- Stop collecting SKOS Concept and Collection subclasses. They are now included
+  in the code base since they seem to have become rather stable and the reduces
+  the startup time of the provider significantly. (#28)
+
 0.3.1 (2016-09-14)
 ------------------
 

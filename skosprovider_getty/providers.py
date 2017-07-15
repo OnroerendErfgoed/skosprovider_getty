@@ -19,7 +19,14 @@ from requests.exceptions import ConnectionError
 from skosprovider.exceptions import ProviderUnavailableException
 from skosprovider.providers import VocabularyProvider
 from skosprovider_getty.utils import (
-    uri_to_id, uri_to_graph, conceptscheme_from_uri, things_from_graph, get_subclasses)
+    uri_to_id, uri_to_graph,
+    conceptscheme_from_uri,
+    things_from_graph,
+    SubClassCollector,
+    GVP
+)
+
+log = logging.getLogger(__name__)
 
 
 class GettyProvider(VocabularyProvider):
@@ -35,24 +42,18 @@ class GettyProvider(VocabularyProvider):
         :param kwargs: arguments defining the provider.
             * Typical arguments are  `base_url`, `vocab_id` and `url`.
                 The `url` is a composition of the `base_url` and `vocab_id`
+            * You can also pass a custom :class:`skosprovider_getty.utils.SubClassCollector`
+                to override default behaviour with the subclasses keyword.
+            * You can also pass a custom requests session with the session keyword.
             * The :class:`skosprovider_getty.providers.AATProvider`
                 is the default :class:`skosprovider_getty.providers.GettyProvider`
         """
         if not 'default_language' in metadata:
             metadata['default_language'] = 'en'
-        if 'base_url' in kwargs:
-            self.base_url = kwargs['base_url']
-        else:
-            self.base_url = 'http://vocab.getty.edu/'
-        if 'vocab_id' in kwargs:
-            self.vocab_id = kwargs['vocab_id']
-        else:
-            self.vocab_id = 'aat'
-        if not 'url' in kwargs:
-            self.url = self.base_url + self.vocab_id
-        else:
-            self.url = kwargs['url']
-        self.subclasses = get_subclasses()
+        self.base_url = kwargs.get('base_url', 'http://vocab.getty.edu/')
+        self.vocab_id = kwargs.get('vocab_id', 'aat')
+        self.url = kwargs.get('url', self.base_url + self.vocab_id)
+        self.subclasses = kwargs.get('subclasses', SubClassCollector(GVP))
         self.session = kwargs.get('session', requests.Session())
         concept_scheme = conceptscheme_from_uri(self.url, session=self.session)
         super(GettyProvider, self).__init__(metadata, concept_scheme=concept_scheme, **kwargs)
@@ -71,6 +72,7 @@ class GettyProvider(VocabularyProvider):
         """
         graph = uri_to_graph('%s/%s.rdf' % (self.url, id), session=self.session)
         if graph is False:
+            log.debug('Failed to retrieve data for %s/%s.rdf' % (self.url, id))
             return False
         # get the concept
         things = things_from_graph(graph, self.subclasses, self.concept_scheme)

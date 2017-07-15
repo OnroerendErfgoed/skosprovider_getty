@@ -10,7 +10,7 @@ from skosprovider_getty.providers import (
     GettyProvider
 )
 import unittest
-from skosprovider_getty.utils import SubClasses
+from skosprovider_getty.utils import SubClassCollector
 
 global clazzes, ontologies
 clazzes = []
@@ -32,14 +32,14 @@ class GettyProviderTests(unittest.TestCase):
         self.assertEqual(concept['type'], 'concept')
         self.assertIsInstance(concept['labels'], list)
 
-        preflabels = [{'nl': 'kerken'}, {'de': u'kirchen (Gebäude)'}]
+        preflabels = [{'nl': 'kerken'}, {'de': u'Kirche (Gebäude)'}]
         preflabels_conc = [{label.language: label.label} for label in concept['labels']
                            if label.type == 'prefLabel']
         self.assertGreater(len(preflabels_conc), 0)
         for label in preflabels:
             self.assertIn(label, preflabels_conc)
        
-        altlabels = [{'nl': 'kerk'}, {'de': u'kirche (Gebäude)'}]
+        altlabels = [{u'nl': 'kerk'}, {u'de': u'kirchen (Gebäude)'}]
         altlabels_conc = [{label.language: label.label} for label in concept['labels']
                           if label.type == 'altLabel']
         self.assertGreater(len(altlabels_conc), 0)
@@ -55,13 +55,11 @@ class GettyProviderTests(unittest.TestCase):
 
     def test_get_by_id_collection(self):
         collection = AATProvider({'id': 'AAT'}).get_by_id('300007473')
-        collection = collection.__dict__
-        self.assertEqual(collection['uri'], 'http://vocab.getty.edu/aat/300007473')
-        self.assertEqual(collection['type'], 'collection')
-        self.assertIsInstance(collection['labels'], list)
-        self.assertIn(u'<kerken naar vorm>', [label.label for label in collection['labels']
-                                             if label.language == 'nl' and label.type == 'prefLabel'])
-        self.assertEqual(len(collection['notes']), 0)
+        assert collection is not False
+        assert collection.uri == 'http://vocab.getty.edu/aat/300007473'
+        assert collection.type == 'collection'
+        assert u'<kerken naar vorm>' in [label.label for label in collection.labels if label.language == 'nl' and label.type == 'prefLabel']
+        assert len(collection.notes) ==  0
 
     def test_get_by_id_invalid(self):
         concept = AATProvider({'id': 'AAT'}).get_by_id('123')
@@ -243,12 +241,6 @@ class GettyProviderTests(unittest.TestCase):
         provider = GettyProvider({'id': 'test'}, vocab_id='aat', url='http://vocab.getty.edu/aat')
         self.assertRaises(ValueError, provider._get_answer, "Wrong SPARQL query")
 
-    def test_ontology_subclasses(self):
-        subclasses = SubClasses(Namespace("http://vocab.getty.edu/ontology#"))
-        list_concept_subclasses = subclasses.collect_subclasses(SKOS.Concept)
-        self.assertEqual(len(list_concept_subclasses), 7)
-        list_collection_subclasses = subclasses.collect_subclasses(SKOS.Collection)
-        self.assertEqual(len(list_collection_subclasses), 4)
 
 class ULANProviderTests(unittest.TestCase):
 
