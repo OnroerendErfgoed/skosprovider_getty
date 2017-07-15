@@ -21,7 +21,7 @@ requires = [
 
 setup(
     name='skosprovider_getty',
-    version='0.3.1',
+    version='0.4.0',
     description='Skosprovider implementation of the Getty Vocabularies',
     long_description=README + '\n\n' + CHANGES,
     packages=packages,
@@ -38,10 +38,11 @@ setup(
         'Programming Language :: Python :: 3.3',
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6'
     ],
     author='Flanders Heritage Agency',
     author_email='ict@onroerenderfgoed.be',
     url='https://github.com/OnroerendErfgoed/skosprovider_getty',
-    keywords='getty skos skosprovider vocabulary AAT TGN',
+    keywords='getty skos skosprovider vocabulary AAT TGNi ULAN',
     test_suite='nose.collector'
 )
