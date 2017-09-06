@@ -58,7 +58,6 @@ class GettyProvider(VocabularyProvider):
         self.url = kwargs.get('url', self.base_url + self.vocab_id)
         self.subclasses = kwargs.get('subclasses', SubClassCollector(GVP))
         self.session = kwargs.get('session', requests.Session())
-        concept_scheme = conceptscheme_from_uri(self.url, session=self.session)
 
     @property
     def concept_scheme(self):
