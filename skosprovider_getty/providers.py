@@ -50,13 +50,25 @@ class GettyProvider(VocabularyProvider):
         """
         if not 'default_language' in metadata:
             metadata['default_language'] = 'en'
+        if 'subject' not in metadata:
+            metadata['subject'] = []
+        self.metadata = metadata
         self.base_url = kwargs.get('base_url', 'http://vocab.getty.edu/')
         self.vocab_id = kwargs.get('vocab_id', 'aat')
         self.url = kwargs.get('url', self.base_url + self.vocab_id)
         self.subclasses = kwargs.get('subclasses', SubClassCollector(GVP))
         self.session = kwargs.get('session', requests.Session())
         concept_scheme = conceptscheme_from_uri(self.url, session=self.session)
-        super(GettyProvider, self).__init__(metadata, concept_scheme=concept_scheme, **kwargs)
+
+    @property
+    def concept_scheme(self):
+        return self._get_concept_scheme()
+
+    def _get_concept_scheme(self):
+        return conceptscheme_from_uri(
+            self.url,
+            session=self.session
+        )
 
     def _get_language(self, **kwargs):
         if 'language' in kwargs:
