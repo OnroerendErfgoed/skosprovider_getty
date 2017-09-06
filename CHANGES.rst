@@ -1,4 +1,4 @@
-0.4.1 (2017-09-04)
+0.4.1 (2017-09-06)
 ------------------
 
 - Stop loading the conceptscheme while initialising the provider.
