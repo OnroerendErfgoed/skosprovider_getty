@@ -2,7 +2,7 @@
 --requirement requirements.txt
 
 # Documentation
-Sphinx==1.6.5
+Sphinx==1.6.6
 
 #testing
 pytest==3.3.1
