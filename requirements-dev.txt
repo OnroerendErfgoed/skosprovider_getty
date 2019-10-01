@@ -6,4 +6,4 @@ Sphinx==2.2.0
 
 #testing
 pytest==5.2.0
-pytest-cov==2.5.1
+pytest-cov==2.7.1
