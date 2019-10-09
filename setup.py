@@ -14,14 +14,14 @@ packages = [
 ]
 
 requires = [
-    'skosprovider>=0.6.0',
+    'skosprovider>=0.7.0',
     'requests',
     'rdflib'
 ]
 
 setup(
     name='skosprovider_getty',
-    version='0.4.2',
+    version='0.5.0',
     description='Skosprovider implementation of the Getty Vocabularies',
     long_description=README + '\n\n' + CHANGES,
     packages=packages,
@@ -43,6 +43,6 @@ setup(
     author='Flanders Heritage Agency',
     author_email='ict@onroerenderfgoed.be',
     url='https://github.com/OnroerendErfgoed/skosprovider_getty',
-    keywords='getty skos skosprovider vocabulary AAT TGNi ULAN',
+    keywords='getty skos skosprovider vocabulary AAT TGN ULAN',
     test_suite='nose.collector'
 )

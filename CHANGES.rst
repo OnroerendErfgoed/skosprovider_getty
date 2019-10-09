@@ -1,3 +1,8 @@
+0.5.0 (2019-??-??)
+------------------
+
+- Compatibile with `SkosProvider 0.7.0 <http://skosprovider.readthedocs.io/en/0.7.0/>`_.
+
 0.4.2 (2017-09-06)
 ------------------
 
