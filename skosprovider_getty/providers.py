@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 '''
-This module contains classes that implement 
+This module contains classes that implement
 :class:`skosprovider.providers.VocabularyProvider` against the LOD version of
 the Getty Vocabularies (AAT, TGN and ULAN).
 
@@ -186,6 +186,18 @@ class GettyProvider(VocabularyProvider):
             if coll_depth not in ('members', 'all'):
                 raise ValueError(
                     "collection - 'depth': only the following values are allowed: 'members', 'all'")
+        #Matches (optional)
+        match_uri = None
+        match_pred = 'skos:mappingRelation'
+        if 'matches' in query:
+            match_uri = query['matches'].get('uri', None)
+            if not match_uri:
+                raise ValueError(
+                    'Please provide a URI to match with.'
+                )
+            match_type = query['matches'].get('type', None)
+            if match_type:
+                match_pred = 'skos:%sMatch' % match_type
 
         #build sparql query
         coll_x = ""
@@ -194,6 +206,9 @@ class GettyProvider(VocabularyProvider):
         elif coll_id is not None and coll_depth == 'members':
             coll_x = "gvp:broader " + self.vocab_id + ":" + coll_id + ";"
 
+        match_values = ""
+        if match_uri is not None:
+            match_values = "%s <%s>;" % (match_pred, match_uri)
 
         type_values = "((?Type = skos:Concept) || (?Type = skos:Collection))"
         if type_c == 'concept':
@@ -202,12 +217,15 @@ class GettyProvider(VocabularyProvider):
             type_values = "(?Type = skos:Collection)"
         query = """
             SELECT ?Subject ?Term ?Type ?Id (lang(?Term) as ?Lang) {
-            ?Subject rdf:type ?Type; dc:identifier ?Id; %s  skos:inScheme %s:; %s.
+            ?Subject rdf:type ?Type; dc:identifier ?Id; skos:inScheme %s:; %s%s%s.
                             OPTIONAL {
                   {?Subject xl:prefLabel [skosxl:literalForm ?Term]}
                           }
             FILTER(%s)
-            }""" % (self._build_keywords(label), self.vocab_id, coll_x, type_values)
+            }""" % (
+                self.vocab_id,
+                self._build_keywords(label), coll_x, match_values,
+                type_values)
         ret= self._get_answer(query, **kwargs)
         language = self._get_language(**kwargs)
         sort = self._get_sort(**kwargs)
@@ -257,7 +275,7 @@ class GettyProvider(VocabularyProvider):
             item = {
             'id': result["Id"]["value"],
             'uri': uri,
-            'type': result["Type"]["value"].rsplit('#', 1)[1],
+            'type': result["Type"]["value"].rsplit('#', 1)[1].lower(),
             'label': label,
             'lang': result["Lang"]["value"]
             }
