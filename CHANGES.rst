@@ -2,6 +2,7 @@
 ------------------
 
 - Compatibile with `SkosProvider 0.7.0 <http://skosprovider.readthedocs.io/en/0.7.0/>`_.
+- Supports Python 2.7, 3.5, 3.6 and 3.7. Last version to support Python 2.
 
 0.4.2 (2017-09-06)
 ------------------
