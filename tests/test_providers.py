@@ -3,6 +3,8 @@
 import pytest
 from rdflib.namespace import SKOS, Namespace
 
+from skosprovider.exceptions import ProviderUnavailableException
+
 from skosprovider_getty.providers import (
     AATProvider,
     TGNProvider,
@@ -243,9 +245,14 @@ class GettyProviderTests(unittest.TestCase):
         assert r[0]['type'] == 'concept'
         assert r[0]['uri'] == 'http://vocab.getty.edu/aat/300191778'
 
+    def test_find_matches_no_uri(self):
+        with pytest.raises(ValueError):
+            r = AATProvider({'id': 'AAT'}).find({'matches': {'type': 'close'}})
+
     def test_answer_wrong_query(self):
-        provider = GettyProvider({'id': 'test'}, vocab_id='aat', url='http://vocab.getty.edu/aat')
-        self.assertRaises(ValueError, provider._get_answer, "Wrong SPARQL query")
+        with pytest.raises(ProviderUnavailableException):
+            provider = GettyProvider({'id': 'test'}, vocab_id='aat', url='http://vocab.getty.edu/aat')
+            provider._get_answer("Wrong SPARQL query")
 
 
 class ULANProviderTests(unittest.TestCase):
@@ -266,9 +273,11 @@ class ULANProviderTests(unittest.TestCase):
         res = ulan.find({'label': 'braem'})
         assert any([a for a in res if a['id'] == '500082691'])
 
-    def test_ulan_search_braem_order_by_id(self):
+    def test_ulan_search_braem_custom_sort(self):
         ulan = ULANProvider({'id': 'ULAN'})
         res = ulan.find({'label': 'braem'}, sort='id')
         assert ['500082691', '500331524'] == [a['id'] for a in res]
         res = ulan.find({'label': 'braem'}, sort='label', sort_order='desc')
+        assert ['500331524', '500082691'] == [a['id'] for a in res]
+        res = ulan.find({'label': 'braem'}, sort='sortlabel', sort_order='desc')
         assert ['500331524', '500082691'] == [a['id'] for a in res]

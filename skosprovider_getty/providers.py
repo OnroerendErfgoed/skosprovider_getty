@@ -15,7 +15,7 @@ import warnings
 import logging
 
 from language_tags import tags
-from requests.exceptions import ConnectionError
+from requests.exceptions import ConnectionError, Timeout
 from skosprovider.exceptions import ProviderUnavailableException
 from skosprovider.providers import VocabularyProvider
 from skosprovider_getty.utils import (
@@ -86,7 +86,12 @@ class GettyProvider(VocabularyProvider):
             log.debug('Failed to retrieve data for %s/%s.rdf' % (self.url, id))
             return False
         # get the concept
-        things = things_from_graph(graph, self.subclasses, self.concept_scheme)
+        things = things_from_graph(
+            graph,
+            self.subclasses,
+            self.concept_scheme,
+            session=self.session
+        )
         if len(things) == 0:
             return False
         c = things[0]
@@ -259,9 +264,14 @@ class GettyProvider(VocabularyProvider):
         try:
             res = self.session.get(request, params={"query": query})
         except ConnectionError as e:
-            raise ProviderUnavailableException("Request could not be executed - Request: %s - Params: %s" % (request, query))
-        if res.status_code == 404:
-            raise ProviderUnavailableException("Service not found (status_code 404) - Request: %s - Params: %s" % (request, query))
+            raise ProviderUnavailableException("Request could not be executed \
+                    due to connection issues - Request: %s - Params: %s" % (request, query))
+        except Timeout: # pragma: no cover
+            raise ProviderUnavailableException("Request could not be executed \
+                    due to timeout - Request: %s - Params: %s" % (request, query))
+        if res.status_code >= 400:
+            raise ProviderUnavailableException("Request could not be executed \
+                    due to server issues - Request: %s - Params: %s" % (request, query))
         if not res.encoding:
             res.encoding = 'utf-8'
         r = res.json()
