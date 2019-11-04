@@ -217,16 +217,30 @@ class SubClassCollector:
         ]
 
     def get_subclasses(self, clazz):
+        '''
+        Get all registered subclasses for a class.
+
+        :param clazz: An RDF class
+        :return: A list of all subclasses, including the original class.
+        '''
         return self.subclasses[clazz]
 
     def collect_subclasses(self, clazz):
+        '''
+        Collect all subclasses for a class and override the registered classes.
+
+        Since this requires fetching ontology files, it might take a while.
+
+        :param clazz: An RDF class
+        :return: A list of all subclasses, including the original class.
+        '''
         self.subclasses[clazz] = [clazz]
         if self.namespace not in self.ontology_graphs:
             try:
                 graph = rdflib.Graph()
                 result = graph.parse(str(self.namespace), format="application/rdf+xml")
                 self.ontology_graphs[self.namespace] = graph
-            except:
+            except: # pragma: no cover
                 self.ontology_graphs[self.namespace] = None
         g = self.ontology_graphs[self.namespace]
         if not g is None:
@@ -243,7 +257,7 @@ class SubClassCollector:
                 graph = rdflib.Graph()
                 result = graph.parse(str(namespace), format="application/rdf+xml")
                 self.ontology_graphs[namespace] = graph
-            except:
+            except: # pragma: no cover
                 self.ontology_graphs[namespace] = None
         g = self.ontology_graphs[namespace]
         if not g is None:
