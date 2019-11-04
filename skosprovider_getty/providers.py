@@ -23,7 +23,8 @@ from skosprovider_getty.utils import (
     conceptscheme_from_uri,
     things_from_graph,
     SubClassCollector,
-    GVP
+    GVP,
+    do_get_request
 )
 
 log = logging.getLogger(__name__)
@@ -261,19 +262,7 @@ class GettyProvider(VocabularyProvider):
             * label: A label to represent the concept or collection.
         """
         request = self.base_url + "sparql.json"
-        try:
-            res = self.session.get(request, params={"query": query})
-        except ConnectionError as e:
-            raise ProviderUnavailableException("Request could not be executed \
-                    due to connection issues - Request: %s - Params: %s" % (request, query))
-        except Timeout: # pragma: no cover
-            raise ProviderUnavailableException("Request could not be executed \
-                    due to timeout - Request: %s - Params: %s" % (request, query))
-        if res.status_code >= 400:
-            raise ProviderUnavailableException("Request could not be executed \
-                    due to server issues - Request: %s - Params: %s" % (request, query))
-        if not res.encoding:
-            res.encoding = 'utf-8'
+        res = do_get_request(request, self.session, params={'query': query})
         r = res.json()
         d = {}
         for result in r["results"]["bindings"]:
@@ -393,8 +382,8 @@ class GettyProvider(VocabularyProvider):
                 """ % (self.vocab_id, self.vocab_id + ":" + id, id, self.vocab_id)
 
         print (query)
-        res = self.session.get(self.base_url + "sparql.json", params={"query": query})
-        res.encoding = 'utf-8'
+        request = self.base_url + "sparql.json"
+        res = do_get_request(request, self.session, params={'query': query})
         r = res.json()
 
         result = [result['Id']['value'] for result in r['results']['bindings']]

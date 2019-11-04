@@ -2,8 +2,12 @@
 import pytest
 import rdflib
 from skosprovider.exceptions import ProviderUnavailableException
-from skosprovider_getty.utils import uri_to_graph, SubClassCollector
-
+from skosprovider_getty.utils import (
+    uri_to_graph,
+    SubClassCollector,
+    GVP,
+    ISO
+)
 
 class TestUtils(object):
 
@@ -29,14 +33,28 @@ class TestUtils(object):
 
     def test_get_subclasses(self):
         from rdflib.namespace import SKOS
-        subclasses = SubClassCollector(rdflib.Namespace("http://vocab.getty.edu/ontology#"))
+        subclasses = SubClassCollector(GVP)
         list_concept_subclasses = subclasses.get_subclasses(SKOS.Concept)
         assert len(list_concept_subclasses) == 8
         assert SKOS.Concept in list_concept_subclasses
 
-    def test_collect_subclasses(self):
+    def test_collect_subclasses_concept(self):
         from rdflib.namespace import SKOS
         subclasses = SubClassCollector(rdflib.Namespace("http://vocab.getty.edu/ontology#"))
         list_concept_subclasses = subclasses.collect_subclasses(SKOS.Concept)
         assert len(list_concept_subclasses) == 8
         assert SKOS.Concept in list_concept_subclasses
+
+    def test_collect_subclasses_collection(self):
+        from rdflib.namespace import SKOS
+        subclasses = SubClassCollector(rdflib.Namespace("http://vocab.getty.edu/ontology#"))
+        list_concept_subclasses = subclasses.collect_subclasses(SKOS.Collection)
+        assert len(list_concept_subclasses) == 5
+        assert SKOS.Collection in list_concept_subclasses
+
+    def test_collect_subclasses_(self):
+        from rdflib.namespace import SKOS
+        subclasses = SubClassCollector(GVP)
+        list_concept_subclasses = subclasses.collect_subclasses(ISO.ThesaurusArray)
+        assert len(list_concept_subclasses) == 4
+        assert ISO.ThesaurusArray in list_concept_subclasses
