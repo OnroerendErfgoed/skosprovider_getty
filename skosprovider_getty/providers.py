@@ -59,6 +59,10 @@ class GettyProvider(VocabularyProvider):
         self.url = kwargs.get('url', self.base_url + self.vocab_id)
         self.subclasses = kwargs.get('subclasses', SubClassCollector(GVP))
         self.session = kwargs.get('session', requests.Session())
+        self.allowed_instance_scopes = kwargs.get(
+            'allowed_instance_scopes',
+            ['single', 'threaded_thread']
+        )
 
     @property
     def concept_scheme(self):

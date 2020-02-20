@@ -27,6 +27,19 @@ class GettyProviderTests(unittest.TestCase):
         provider = AATProvider({'id': 'AAT'}, session=sess)
         self.assertEqual(sess, provider.session)
 
+    def test_allowed_instance_scopes(self):
+        provider = AATProvider({'id': 'AAT'})
+        assert provider.allowed_instance_scopes == [
+            'single', 'threaded_thread'
+        ]
+
+    def test_override_instance_scopes(self):
+        provider = AATProvider(
+            {'id': 'AAT'},
+            allowed_instance_scopes = ['single']
+        )
+        assert provider.allowed_instance_scopes == ['single']
+
     def test_get_by_id_concept(self):
         concept = AATProvider({'id': 'AAT'}).get_by_id('300007466', change_notes=True)
         concept = concept.__dict__
