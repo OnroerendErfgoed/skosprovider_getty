@@ -150,7 +150,7 @@ def _create_label(literal, type):
     try:
         l = Label(literal.toPython(), type, language)
     except ValueError as e:
-        log.warn('Received a label with an invalid language tag: %s.' % language)
+        log.warn('Received a label with an invalid language tag: %s.', language)
         l = Label(literal.toPython(), type, 'und')
     return l
 
@@ -302,14 +302,11 @@ def do_get_request(url, session=None, headers=None, params=None):
     try:
         res = session.get(url, headers=headers, params=params)
     except ConnectionError:
-        raise ProviderUnavailableException("Request could not be executed \
-                due to connection issues- Request: %s" % (url,))
+        raise ProviderUnavailableException("Request could not be executed due to connection issues- Request: %s" % (url,))
     except Timeout: # pragma: no cover
-        raise ProviderUnavailableException("Request could not be executed \
-                due to timeout - Request: %s" % (url,))
+        raise ProviderUnavailableException("Request could not be executed due to timeout - Request: %s" % (url,))
     if res.status_code >= 500:
-        raise ProviderUnavailableException("Request could not be executed \
-                due to server issues - Request: %s" % (url,))
+        raise ProviderUnavailableException("Request could not be executed due to server issues - Request: %s. Response: %s." % (url, res.content))
     if not res.encoding:
         res.encoding = 'utf-8'
     return res
