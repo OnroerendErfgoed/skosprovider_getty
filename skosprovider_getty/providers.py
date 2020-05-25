@@ -63,10 +63,13 @@ class GettyProvider(VocabularyProvider):
             'allowed_instance_scopes',
             ['single', 'threaded_thread']
         )
+        self._conceptscheme = None
 
     @property
     def concept_scheme(self):
-        return self._get_concept_scheme()
+        if self._conceptscheme is None:
+            self._conceptscheme = self._get_concept_scheme()
+        return self._conceptscheme
 
     def _get_concept_scheme(self):
         return conceptscheme_from_uri(
