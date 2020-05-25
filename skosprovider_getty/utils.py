@@ -7,7 +7,7 @@ import requests
 import rdflib
 from rdflib.graph import Graph
 from rdflib.term import URIRef
-from requests.packages.urllib3.exceptions import ConnectionError
+from requests.exceptions import ConnectionError, Timeout
 from skosprovider.exceptions import ProviderUnavailableException
 
 from skosprovider.skos import (
@@ -113,19 +113,11 @@ def _create_from_subject_typelist(graph, subject, typelist):
 
 def _get_super_ordinates(conceptscheme, sub, **kwargs):
     ret = []
-
+    s = kwargs.get('session', requests.Session())
     query = """PREFIX ns:<%s>
     SELECT * WHERE {?s iso-thes:subordinateArray ns:%s}""" % (conceptscheme.uri, uri_to_id(sub))
-    request = conceptscheme.uri.strip('/').rsplit('/', 1)[0] + "/sparql.json"
-    s = kwargs.get('session', requests.Session())
-    try:
-        res = s.get(request, params={"query": query})
-    except ConnectionError as e:
-        raise ProviderUnavailableException("Request could not be executed - Request: %s - Params: %s" % (request, query))
-    if res.status_code == 404:
-        raise ProviderUnavailableException("Service not found (status_code 404) - Request: %s - Params: %s" % (request, query))
-    if not res.encoding:
-        res.encoding = 'utf-8'
+    url = conceptscheme.uri.strip('/').rsplit('/', 1)[0] + "/sparql.json"
+    res = do_get_request(url, s, params={'query': query})
     r = res.json()
     for result in r["results"]["bindings"]:
         ret.append(uri_to_id(result["s"]["value"]))
@@ -158,7 +150,7 @@ def _create_label(literal, type):
     try:
         l = Label(literal.toPython(), type, language)
     except ValueError as e:
-        log.warn(e)
+        log.warn('Received a label with an invalid language tag: %s.', language)
         l = Label(literal.toPython(), type, 'und')
     return l
 
@@ -217,16 +209,30 @@ class SubClassCollector:
         ]
 
     def get_subclasses(self, clazz):
+        '''
+        Get all registered subclasses for a class.
+
+        :param clazz: An RDF class
+        :return: A list of all subclasses, including the original class.
+        '''
         return self.subclasses[clazz]
 
     def collect_subclasses(self, clazz):
+        '''
+        Collect all subclasses for a class and override the registered classes.
+
+        Since this requires fetching ontology files, it might take a while.
+
+        :param clazz: An RDF class
+        :return: A list of all subclasses, including the original class.
+        '''
         self.subclasses[clazz] = [clazz]
         if self.namespace not in self.ontology_graphs:
             try:
                 graph = rdflib.Graph()
                 result = graph.parse(str(self.namespace), format="application/rdf+xml")
                 self.ontology_graphs[self.namespace] = graph
-            except:
+            except: # pragma: no cover
                 self.ontology_graphs[self.namespace] = None
         g = self.ontology_graphs[self.namespace]
         if not g is None:
@@ -243,7 +249,7 @@ class SubClassCollector:
                 graph = rdflib.Graph()
                 result = graph.parse(str(namespace), format="application/rdf+xml")
                 self.ontology_graphs[namespace] = graph
-            except:
+            except: # pragma: no cover
                 self.ontology_graphs[namespace] = None
         g = self.ontology_graphs[namespace]
         if not g is None:
@@ -283,12 +289,24 @@ def uri_to_graph(uri, **kwargs):
     '''
     s = kwargs.get('session', requests.Session())
     graph = rdflib.Graph()
-    try:
-        res = s.get(uri)
-    except requests.ConnectionError as e:
-        raise ProviderUnavailableException("URI not available: %s" % uri)
+    res = do_get_request(uri, s)
     if res.status_code == 404:
         return False
     graph.parse(data=res.content)
     return graph
 
+
+def do_get_request(url, session=None, headers=None, params=None):
+    if not session:
+        session = requests.Session()
+    try:
+        res = session.get(url, headers=headers, params=params)
+    except ConnectionError:
+        raise ProviderUnavailableException("Request could not be executed due to connection issues- Request: %s" % (url,))
+    except Timeout: # pragma: no cover
+        raise ProviderUnavailableException("Request could not be executed due to timeout - Request: %s" % (url,))
+    if res.status_code >= 500:
+        raise ProviderUnavailableException("Request could not be executed due to server issues - Request: %s. Response: %s." % (url, res.content))
+    if not res.encoding:
+        res.encoding = 'utf-8'
+    return res
