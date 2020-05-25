@@ -40,6 +40,14 @@ class GettyProviderTests(unittest.TestCase):
         )
         assert provider.allowed_instance_scopes == ['single']
 
+    def test_concept_scheme_is_cached(self):
+        provider = AATProvider(
+            {'id': 'AAT'}
+        )
+        assert provider._conceptscheme is None
+        cs = provider.concept_scheme
+        assert provider._conceptscheme == cs
+
     def test_get_by_id_concept(self):
         concept = AATProvider({'id': 'AAT'}).get_by_id('300007466', change_notes=True)
         concept = concept.__dict__
