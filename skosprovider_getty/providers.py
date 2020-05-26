@@ -53,12 +53,12 @@ class GettyProvider(VocabularyProvider):
             metadata['default_language'] = 'en'
         if 'subject' not in metadata:
             metadata['subject'] = []
-        self.metadata = metadata
         self.base_url = kwargs.get('base_url', 'http://vocab.getty.edu/')
         self.vocab_id = kwargs.get('vocab_id', 'aat')
         self.url = kwargs.get('url', self.base_url + self.vocab_id)
         if 'uri' not in metadata:
             metadata['uri'] = self.url + '/'
+        self.metadata = metadata
         self.subclasses = kwargs.get('subclasses', SubClassCollector(GVP))
         self.session = kwargs.get('session', requests.Session())
         self.allowed_instance_scopes = kwargs.get(
