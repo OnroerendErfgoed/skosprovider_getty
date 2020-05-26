@@ -57,6 +57,8 @@ class GettyProvider(VocabularyProvider):
         self.base_url = kwargs.get('base_url', 'http://vocab.getty.edu/')
         self.vocab_id = kwargs.get('vocab_id', 'aat')
         self.url = kwargs.get('url', self.base_url + self.vocab_id)
+        if 'uri' not in metadata:
+            metadata['uri'] = self.url + '/'
         self.subclasses = kwargs.get('subclasses', SubClassCollector(GVP))
         self.session = kwargs.get('session', requests.Session())
         self.allowed_instance_scopes = kwargs.get(
@@ -73,7 +75,7 @@ class GettyProvider(VocabularyProvider):
 
     def _get_concept_scheme(self):
         return conceptscheme_from_uri(
-            self.url,
+            self.metadata['uri'],
             session=self.session
         )
 

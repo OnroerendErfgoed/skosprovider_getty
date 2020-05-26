@@ -48,6 +48,20 @@ class GettyProviderTests(unittest.TestCase):
         cs = provider.concept_scheme
         assert provider._conceptscheme == cs
 
+    def test_get_vocabulary_uri(self):
+        provider = AATProvider(
+            {'id': 'AAT'}
+        )
+        assert 'http://vocab.getty.edu/aat/' == provider.get_vocabulary_uri()
+
+    def test_get_vocabulary_uri_does_not_load_cs(self):
+        provider = ULANProvider(
+            {'id': 'ULAN'}
+        )
+        assert provider._conceptscheme is None
+        assert 'http://vocab.getty.edu/ulan/' == provider.get_vocabulary_uri()
+        assert provider._conceptscheme is None
+
     def test_get_by_id_concept(self):
         concept = AATProvider({'id': 'AAT'}).get_by_id('300007466', change_notes=True)
         concept = concept.__dict__
