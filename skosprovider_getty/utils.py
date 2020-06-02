@@ -57,6 +57,8 @@ def conceptscheme_from_uri(conceptscheme_uri, **kwargs):
 
 def things_from_graph(graph, subclasses, conceptscheme, **kwargs):
     s = kwargs.get('session', requests.Session())
+    valid_label_types = Label.valid_types[:]
+    valid_label_types.remove('sortLabel')
     graph = graph
     clist = []
     concept_graph = Graph()
@@ -69,12 +71,12 @@ def things_from_graph(graph, subclasses, conceptscheme, **kwargs):
         uri = str(sub)
         matches = {}
         for k in Concept.matchtypes:
-            matches[k] = _create_from_subject_predicate(graph, sub, URIRef(SKOS + k + 'Match'))
+            matches[k] = _create_from_subject_predicate(graph, sub, SKOS[k + 'Match'])
         con = Concept(
             uri_to_id(uri),
             uri=uri,
             concept_scheme = conceptscheme,
-            labels = _create_from_subject_typelist(graph, sub, Label.valid_types),
+            labels = _create_from_subject_typelist(graph, sub, valid_label_types),
             notes = _create_from_subject_typelist(graph, sub, hierarchy_notetypes(Note.valid_types)),
             sources = [],
             broader = _create_from_subject_predicate(graph, sub, SKOS.broader),
@@ -91,7 +93,7 @@ def things_from_graph(graph, subclasses, conceptscheme, **kwargs):
             uri_to_id(uri),
             uri=uri,
             concept_scheme = conceptscheme,
-            labels = _create_from_subject_typelist(graph, sub, Label.valid_types),
+            labels = _create_from_subject_typelist(graph, sub, valid_label_types),
             notes = _create_from_subject_typelist(graph, sub, hierarchy_notetypes(Note.valid_types)),
             sources = [],
             members = _create_from_subject_predicate(graph, sub, SKOS.member),
