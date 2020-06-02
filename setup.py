@@ -24,6 +24,7 @@ setup(
     version='0.5.0',
     description='Skosprovider implementation of the Getty Vocabularies',
     long_description=README + '\n\n' + CHANGES,
+    long_description_content_type='text/x-rst',
     packages=packages,
     include_package_data=True,
     install_requires=requires,
