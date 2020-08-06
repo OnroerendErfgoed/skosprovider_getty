@@ -3,6 +3,8 @@
 import pytest
 from rdflib.namespace import SKOS, Namespace
 
+from skosprovider.exceptions import ProviderUnavailableException
+
 from skosprovider_getty.providers import (
     AATProvider,
     TGNProvider,
@@ -25,6 +27,41 @@ class GettyProviderTests(unittest.TestCase):
         provider = AATProvider({'id': 'AAT'}, session=sess)
         self.assertEqual(sess, provider.session)
 
+    def test_allowed_instance_scopes(self):
+        provider = AATProvider({'id': 'AAT'})
+        assert provider.allowed_instance_scopes == [
+            'single', 'threaded_thread'
+        ]
+
+    def test_override_instance_scopes(self):
+        provider = AATProvider(
+            {'id': 'AAT'},
+            allowed_instance_scopes = ['single']
+        )
+        assert provider.allowed_instance_scopes == ['single']
+
+    def test_concept_scheme_is_cached(self):
+        provider = AATProvider(
+            {'id': 'AAT'}
+        )
+        assert provider._conceptscheme is None
+        cs = provider.concept_scheme
+        assert provider._conceptscheme == cs
+
+    def test_get_vocabulary_uri(self):
+        provider = AATProvider(
+            {'id': 'AAT'}
+        )
+        assert 'http://vocab.getty.edu/aat/' == provider.get_vocabulary_uri()
+
+    def test_get_vocabulary_uri_does_not_load_cs(self):
+        provider = ULANProvider(
+            {'id': 'ULAN'}
+        )
+        assert provider._conceptscheme is None
+        assert 'http://vocab.getty.edu/ulan/' == provider.get_vocabulary_uri()
+        assert provider._conceptscheme is None
+
     def test_get_by_id_concept(self):
         concept = AATProvider({'id': 'AAT'}).get_by_id('300007466', change_notes=True)
         concept = concept.__dict__
@@ -38,7 +75,7 @@ class GettyProviderTests(unittest.TestCase):
         self.assertGreater(len(preflabels_conc), 0)
         for label in preflabels:
             self.assertIn(label, preflabels_conc)
-       
+
         altlabels = [{u'nl': 'kerk'}, {u'de': u'kirchen (Gebäude)'}]
         altlabels_conc = [{label.language: label.label} for label in concept['labels']
                           if label.type == 'altLabel']
@@ -161,85 +198,96 @@ class GettyProviderTests(unittest.TestCase):
         self.assertIsInstance(r, list)
         self.assertGreater(len(r), 0)
         for res in r:
-            self.assertEqual(res['type'], 'Concept')
+            assert res['type'] == 'concept'
 
     def test_find_multiple_keywords(self):
         r = AATProvider({'id': 'AAT'}).find({'label': 'church abbey', 'type': 'concept'})
         self.assertIsInstance(r, list)
         self.assertGreater(len(r), 0)
         for res in r:
-            self.assertEqual(res['type'], 'Concept')
+            assert res['type'] == 'concept'
 
     def test_find_member_concepts_in_collection(self):
         r = AATProvider({'id': 'AAT'}).find({'label': 'church', 'type': 'concept', 'collection': {'id': '300007494', 'depth': 'members'}})
         self.assertIsInstance(r, list)
         self.assertGreater(len(r), 0)
         for res in r:
-            self.assertEqual(res['type'], 'Concept')
+            assert res['type'] == 'concept'
 
     def test_find_collections_in_collection(self):
         r = AATProvider({'id': 'AAT'}).find({'label': 'church', 'type': 'collection', 'collection': {'id': '300007466', 'depth': 'all'}})
-        self.assertIsInstance(r, list)
-        self.assertGreater(len(r), 0)
+        assert len(r) > 0
         for res in r:
-            self.assertEqual(res['type'], 'Collection')
+            assert res['type'] == 'collection'
 
     def test_find_concepts(self):
         r = AATProvider({'id': 'AAT'}).find({'label': 'church', 'type': 'concept'})
         self.assertIsInstance(r, list)
         self.assertGreater(len(r), 0)
         for res in r:
-            self.assertEqual(res['type'], 'Concept')
+            assert res['type'] == 'concept'
 
     def test_find_concepts_kerk_zh(self):
         r = AATProvider({'id': 'AAT', 'default_language': 'zh'}).find({'label': 'kerk', 'type': 'concept'})
         self.assertIsInstance(r, list)
         self.assertGreater(len(r), 0)
         for res in r:
-            self.assertEqual(res['type'], 'Concept')
+            assert res['type'] == 'concept'
 
     def test_find_concepts_kerk_language(self):
         kwargs = {'language': 'nl'}
         result = AATProvider({'id': 'AAT'}).find({'label': 'kerk', 'type': 'concept'}, **kwargs)
-        self.assertIsInstance(result, list)
-        self.assertGreater(len(result), 0)
+        assert len(result) > 0
         labels = []
         for res in result:
-            self.assertEqual(res['type'], 'Concept')
+            assert res['type'] == 'concept'
             labels.append(res['label'])
-        self.assertIn("kerken", labels)
+        assert "kerken" in labels
 
     def test_find_concepts_kerk(self):
         r1 = AATProvider({'id': 'AAT'}).find({'label': 'kerk', 'type': 'concept'})
         r2 = AATProvider({'id': 'AAT', 'default_language': 'en'}).find({'label': 'kirche', 'type': 'concept'})
         r3 = AATProvider({'id': 'AAT', 'default_language': 'nl'}).find({'label': 'kerk', 'type': 'concept'})
 
-        self.assertIsInstance(r1, list)
-        self.assertIsInstance(r2, list)
-        self.assertIsInstance(r3, list)
-        self.assertGreater(len(r1), 0)
-        self.assertGreater(len(r2), 0)
-        self.assertGreater(len(r3), 0)
+        assert len(r1) > 0
+        assert len(r2) > 0
+        assert len(r3) > 0
         for res in r1:
-            self.assertIn('church', res['label'].lower())
-            self.assertEqual(res['type'], 'Concept')
+            assert 'church' in res['label'].lower()
+            assert res['type'] == 'concept'
         for res in r2:
-            self.assertIn('church', res['label'].lower())
-            self.assertEqual(res['type'], 'Concept')
+            assert 'church' in res['label'].lower()
+            assert res['type'] == 'concept'
         for res in r3:
-            self.assertIn('kerk', res['label'].lower())
-            self.assertEqual(res['type'], 'Concept')
+            assert 'kerk' in res['label'].lower()
+            assert res['type'] == 'concept'
 
     def test_find_member_collections_in_collection(self):
         r = AATProvider({'id': 'AAT'}).find({'label': 'church', 'type': 'collection', 'collection': {'id': '300007466', 'depth': 'members'}})
-        self.assertIsInstance(r, list)
-        self.assertGreater(len(r), 0)
+        assert len (r) > 0
         for res in r:
-            self.assertEqual(res['type'], 'Collection')
+            assert res['type'] == 'collection'
+
+    def test_find_matches(self):
+        r = AATProvider({'id': 'AAT'}).find({'matches': {'uri': 'http://id.loc.gov/authorities/subjects/sh85123119'}})
+        assert len(r) == 1
+        assert r[0]['type'] == 'concept'
+        assert r[0]['uri'] == 'http://vocab.getty.edu/aat/300191778'
+
+    def test_find_closematches(self):
+        r = AATProvider({'id': 'AAT'}).find({'matches': {'uri': 'http://id.loc.gov/authorities/subjects/sh85123119', 'type': 'close'}})
+        assert len(r) == 1
+        assert r[0]['type'] == 'concept'
+        assert r[0]['uri'] == 'http://vocab.getty.edu/aat/300191778'
+
+    def test_find_matches_no_uri(self):
+        with pytest.raises(ValueError):
+            r = AATProvider({'id': 'AAT'}).find({'matches': {'type': 'close'}})
 
     def test_answer_wrong_query(self):
-        provider = GettyProvider({'id': 'test'}, vocab_id='aat', url='http://vocab.getty.edu/aat')
-        self.assertRaises(ValueError, provider._get_answer, "Wrong SPARQL query")
+        with pytest.raises(ProviderUnavailableException):
+            provider = GettyProvider({'id': 'test'}, vocab_id='aat', url='http://vocab.getty.edu/aat')
+            provider._get_answer("Wrong SPARQL query")
 
 
 class ULANProviderTests(unittest.TestCase):
@@ -260,9 +308,11 @@ class ULANProviderTests(unittest.TestCase):
         res = ulan.find({'label': 'braem'})
         assert any([a for a in res if a['id'] == '500082691'])
 
-    def test_ulan_search_braem_order_by_id(self):
+    def test_ulan_search_braem_custom_sort(self):
         ulan = ULANProvider({'id': 'ULAN'})
         res = ulan.find({'label': 'braem'}, sort='id')
         assert ['500082691', '500331524'] == [a['id'] for a in res]
         res = ulan.find({'label': 'braem'}, sort='label', sort_order='desc')
+        assert ['500331524', '500082691'] == [a['id'] for a in res]
+        res = ulan.find({'label': 'braem'}, sort='sortlabel', sort_order='desc')
         assert ['500331524', '500082691'] == [a['id'] for a in res]

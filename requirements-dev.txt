@@ -1,9 +1,12 @@
 # Runtime requirements
 --requirement requirements.txt
 
-# Documentation
-Sphinx==1.7.5
+# Testing
+pytest==4.6.9 ; python_version < '3.0'
+pytest==5.3.5 ; python_version >= '3.0'
+pytest-cov==2.8.1
+coveralls==1.11.1
 
-#testing
-pytest==3.6.0
-pytest-cov==2.5.1
+# Documentation
+Sphinx==1.8.5 ; python_version < '3.5'
+Sphinx==3.0.4 ; python_version >= '3.5'

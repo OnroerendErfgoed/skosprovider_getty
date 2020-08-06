@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 '''
-This module contains classes that implement 
+This module contains classes that implement
 :class:`skosprovider.providers.VocabularyProvider` against the LOD version of
 the Getty Vocabularies (AAT, TGN and ULAN).
 
@@ -15,7 +15,7 @@ import warnings
 import logging
 
 from language_tags import tags
-from requests.exceptions import ConnectionError
+from requests.exceptions import ConnectionError, Timeout
 from skosprovider.exceptions import ProviderUnavailableException
 from skosprovider.providers import VocabularyProvider
 from skosprovider_getty.utils import (
@@ -23,7 +23,8 @@ from skosprovider_getty.utils import (
     conceptscheme_from_uri,
     things_from_graph,
     SubClassCollector,
-    GVP
+    GVP,
+    do_get_request
 )
 
 log = logging.getLogger(__name__)
@@ -52,20 +53,29 @@ class GettyProvider(VocabularyProvider):
             metadata['default_language'] = 'en'
         if 'subject' not in metadata:
             metadata['subject'] = []
-        self.metadata = metadata
         self.base_url = kwargs.get('base_url', 'http://vocab.getty.edu/')
         self.vocab_id = kwargs.get('vocab_id', 'aat')
         self.url = kwargs.get('url', self.base_url + self.vocab_id)
+        if 'uri' not in metadata:
+            metadata['uri'] = self.url + '/'
+        self.metadata = metadata
         self.subclasses = kwargs.get('subclasses', SubClassCollector(GVP))
         self.session = kwargs.get('session', requests.Session())
+        self.allowed_instance_scopes = kwargs.get(
+            'allowed_instance_scopes',
+            ['single', 'threaded_thread']
+        )
+        self._conceptscheme = None
 
     @property
     def concept_scheme(self):
-        return self._get_concept_scheme()
+        if self._conceptscheme is None:
+            self._conceptscheme = self._get_concept_scheme()
+        return self._conceptscheme
 
     def _get_concept_scheme(self):
         return conceptscheme_from_uri(
-            self.url,
+            self.metadata['uri'],
             session=self.session
         )
 
@@ -86,7 +96,12 @@ class GettyProvider(VocabularyProvider):
             log.debug('Failed to retrieve data for %s/%s.rdf' % (self.url, id))
             return False
         # get the concept
-        things = things_from_graph(graph, self.subclasses, self.concept_scheme)
+        things = things_from_graph(
+            graph,
+            self.subclasses,
+            self.concept_scheme,
+            session=self.session
+        )
         if len(things) == 0:
             return False
         c = things[0]
@@ -186,6 +201,18 @@ class GettyProvider(VocabularyProvider):
             if coll_depth not in ('members', 'all'):
                 raise ValueError(
                     "collection - 'depth': only the following values are allowed: 'members', 'all'")
+        #Matches (optional)
+        match_uri = None
+        match_pred = 'skos:mappingRelation'
+        if 'matches' in query:
+            match_uri = query['matches'].get('uri', None)
+            if not match_uri:
+                raise ValueError(
+                    'Please provide a URI to match with.'
+                )
+            match_type = query['matches'].get('type', None)
+            if match_type:
+                match_pred = 'skos:%sMatch' % match_type
 
         #build sparql query
         coll_x = ""
@@ -194,6 +221,9 @@ class GettyProvider(VocabularyProvider):
         elif coll_id is not None and coll_depth == 'members':
             coll_x = "gvp:broader " + self.vocab_id + ":" + coll_id + ";"
 
+        match_values = ""
+        if match_uri is not None:
+            match_values = "%s <%s>;" % (match_pred, match_uri)
 
         type_values = "((?Type = skos:Concept) || (?Type = skos:Collection))"
         if type_c == 'concept':
@@ -202,12 +232,15 @@ class GettyProvider(VocabularyProvider):
             type_values = "(?Type = skos:Collection)"
         query = """
             SELECT ?Subject ?Term ?Type ?Id (lang(?Term) as ?Lang) {
-            ?Subject rdf:type ?Type; dc:identifier ?Id; %s  skos:inScheme %s:; %s.
+            ?Subject rdf:type ?Type; dc:identifier ?Id; skos:inScheme %s:; %s%s%s.
                             OPTIONAL {
                   {?Subject xl:prefLabel [skosxl:literalForm ?Term]}
                           }
             FILTER(%s)
-            }""" % (self._build_keywords(label), self.vocab_id, coll_x, type_values)
+            }""" % (
+                self.vocab_id,
+                self._build_keywords(label), coll_x, match_values,
+                type_values)
         ret= self._get_answer(query, **kwargs)
         language = self._get_language(**kwargs)
         sort = self._get_sort(**kwargs)
@@ -238,14 +271,7 @@ class GettyProvider(VocabularyProvider):
             * label: A label to represent the concept or collection.
         """
         request = self.base_url + "sparql.json"
-        try:
-            res = self.session.get(request, params={"query": query})
-        except ConnectionError as e:
-            raise ProviderUnavailableException("Request could not be executed - Request: %s - Params: %s" % (request, query))
-        if res.status_code == 404:
-            raise ProviderUnavailableException("Service not found (status_code 404) - Request: %s - Params: %s" % (request, query))
-        if not res.encoding:
-            res.encoding = 'utf-8'
+        res = do_get_request(request, self.session, params={'query': query})
         r = res.json()
         d = {}
         for result in r["results"]["bindings"]:
@@ -257,7 +283,7 @@ class GettyProvider(VocabularyProvider):
             item = {
             'id': result["Id"]["value"],
             'uri': uri,
-            'type': result["Type"]["value"].rsplit('#', 1)[1],
+            'type': result["Type"]["value"].rsplit('#', 1)[1].lower(),
             'label': label,
             'lang': result["Lang"]["value"]
             }
@@ -365,8 +391,8 @@ class GettyProvider(VocabularyProvider):
                 """ % (self.vocab_id, self.vocab_id + ":" + id, id, self.vocab_id)
 
         print (query)
-        res = self.session.get(self.base_url + "sparql.json", params={"query": query})
-        res.encoding = 'utf-8'
+        request = self.base_url + "sparql.json"
+        res = do_get_request(request, self.session, params={'query': query})
         r = res.json()
 
         result = [result['Id']['value'] for result in r['results']['bindings']]
