@@ -1,8 +1,10 @@
-0.5.0 (2019-??-??)
+0.5.0 (2020-08-06)
 ------------------
 
-- Compatibile with `SkosProvider 0.7.0 <http://skosprovider.readthedocs.io/en/0.7.0/>`_.
-- Supports Python 2.7, 3.5, 3.6 and 3.7. Last version to support Python 2.
+- Compatibile with `SkosProvider 0.7.0 <http://skosprovider.readthedocs.io/en/0.7.0/>`_. (#59)
+- Prevent unnecessary loading of conceptschemes. (#56)
+- Update to RDFlib 5.0.0 (#69)
+- Supports Python 2.7, 3.6, 3.7 and 3.8. Last version to support Python 2.
 
 0.4.2 (2017-09-06)
 ------------------
@@ -18,7 +20,7 @@
 ------------------
 
 - Stop collecting SKOS Concept and Collection subclasses. They are now included
-  in the code base since they seem to have become rather stable and the reduces
+  in the code base since they seem to have become rather stable and this reduces
   the startup time of the provider significantly. (#28)
 - Add support for python 3.6 when testing.
 
