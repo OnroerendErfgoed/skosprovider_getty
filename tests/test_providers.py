@@ -127,6 +127,8 @@ class GettyProviderTests(unittest.TestCase):
         # Default GettyProvider is an AAT provider
         concept = GettyProvider({'id': 'AAT'}).get_by_uri('urn:skosprovider:5')
         self.assertFalse(concept)
+        concept = GettyProvider({'id': 'AAT'}).get_by_uri('https://id.erfgoed.net/thesauri/materialen/7')
+        self.assertFalse(concept)
 
     def test_get_by_id_tgn(self):
         concept = TGNProvider({'id': 'TGN'}).get_by_id('1000063')
