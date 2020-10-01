@@ -279,7 +279,10 @@ def hierarchy_notetypes(list):
 
 
 def uri_to_id(uri):
-    return uri.strip('/').rsplit('/', 1)[1]
+    try:
+        return uri.strip('/').rsplit('/', 1)[1]
+    except IndexError:
+        return uri
 
 
 def uri_to_graph(uri, **kwargs):
