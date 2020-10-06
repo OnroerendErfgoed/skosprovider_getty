@@ -3,6 +3,7 @@
 
 - Prevent get_by_uri erroring on non-Getty URI's (#77)
 - Remove reference to nose.collector
+- Remove pyup integration
 
 0.5.0 (2020-08-06)
 ------------------
