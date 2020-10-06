@@ -43,6 +43,5 @@ setup(
     author='Flanders Heritage Agency',
     author_email='ict@onroerenderfgoed.be',
     url='https://github.com/OnroerendErfgoed/skosprovider_getty',
-    keywords='getty skos skosprovider vocabulary AAT TGN ULAN',
-    test_suite='nose.collector'
+    keywords='getty skos skosprovider vocabulary AAT TGN ULAN'
 )
