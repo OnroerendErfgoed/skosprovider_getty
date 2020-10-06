@@ -9,4 +9,4 @@ coveralls==1.11.1
 
 # Documentation
 Sphinx==3.2.1; python_version < '3.5'
-Sphinx==3.0.4 ; python_version >= '3.5'
+Sphinx==3.2.1; python_version >= '3.5'
