@@ -118,7 +118,7 @@ class GettyProvider(VocabularyProvider):
 
         id = uri_to_id(uri)
 
-        return self.get_by_id(id, change_notes)
+        return self.get_by_id(id, change_notes) if 'vocab.getty.edu' in uri else None
 
     def find(self, query, **kwargs):
         '''Find concepts that match a certain query.

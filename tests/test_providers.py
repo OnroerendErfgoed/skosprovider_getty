@@ -123,6 +123,13 @@ class GettyProviderTests(unittest.TestCase):
         self.assertEqual(concept['uri'], 'http://vocab.getty.edu/aat/300007466')
         self.assertEqual(concept['id'], '300007466')
 
+    def test_get_by_uri_invalid(self):
+        # Default GettyProvider is an AAT provider
+        concept = GettyProvider({'id': 'AAT'}).get_by_uri('urn:skosprovider:5')
+        self.assertFalse(concept)
+        concept = GettyProvider({'id': 'AAT'}).get_by_uri('https://id.erfgoed.net/thesauri/materialen/7')
+        self.assertFalse(concept)
+
     def test_get_by_id_tgn(self):
         concept = TGNProvider({'id': 'TGN'}).get_by_id('1000063')
         concept = concept.__dict__
