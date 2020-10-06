@@ -1,3 +1,9 @@
+0.5.1 (2020-10-06)
+------------------
+
+- Prevent get_by_uri erroring on non-Getty URI's (#77)
+- Remove reference to nose.collector
+
 0.5.0 (2020-08-06)
 ------------------
 
