@@ -1,5 +1,4 @@
 #!/usr/bin/python
-# -*- coding: utf-8 -*-
 '''
 This script demonstrates retrieving subclasses for a certain class.
 '''
