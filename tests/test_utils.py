@@ -1,7 +1,6 @@
 import pytest
 import rdflib
 from rdflib.namespace import SKOS
-from rdflib.plugin import PluginException
 from skosprovider.exceptions import ProviderUnavailableException
 
 from skosprovider_getty.utils import GVP
@@ -19,7 +18,7 @@ class TestUtils:
 
     def test_uri_to_graph2(self):
         uri = 'http://vocab.getty.edu/aat/300007466'
-        with pytest.raises(PluginException):
+        with pytest.raises(TypeError):
             uri_to_graph(uri)
 
     def test_uri_to_graph_not_found(self):
