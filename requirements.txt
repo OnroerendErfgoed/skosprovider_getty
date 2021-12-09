@@ -1,4 +1,4 @@
 requests==2.26.0
-skosprovider==1.0.0
+skosprovider==1.1.0
 #-e git+https://github.com/koenedaele/skosprovider.git@DEV_0.7.0#egg=skosprovider
 rdflib==5.0.0
