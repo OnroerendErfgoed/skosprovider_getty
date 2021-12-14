@@ -1,5 +1,4 @@
 #!/usr/bin/python
-# -*- coding: utf-8 -*-
 '''
 This script demonstrates using the AATProvider to expand a collection
 '''

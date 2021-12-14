@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # skosprovider_getty documentation build configuration file, created by
 # sphinx-quickstart on Fri Sep 19 10:30:09 2014.
@@ -49,8 +48,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'skosprovider_getty'
-copyright = u'2014-2020, Flanders Heritage Agency'
+project = 'skosprovider_getty'
+copyright = '2014-2020, Flanders Heritage Agency'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -202,8 +201,8 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-  ('index', 'skosprovider_getty.tex', u'skosprovider\\_getty Documentation',
-   u'Flanders Heritage Agency', 'manual'),
+  ('index', 'skosprovider_getty.tex', 'skosprovider\\_getty Documentation',
+   'Flanders Heritage Agency', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -232,8 +231,8 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'skosprovider_getty', u'skosprovider_getty Documentation',
-     [u'Flanders Heritage Agency'], 1)
+    ('index', 'skosprovider_getty', 'skosprovider_getty Documentation',
+     ['Flanders Heritage Agency'], 1)
 ]
 
 # If true, show URL addresses after external links.
@@ -246,8 +245,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'skosprovider_getty', u'skosprovider_getty Documentation',
-   u'Flanders Heritage Agency', 'skosprovider_getty', 'One line description of project.',
+  ('index', 'skosprovider_getty', 'skosprovider_getty Documentation',
+   'Flanders Heritage Agency', 'skosprovider_getty', 'One line description of project.',
    'Miscellaneous'),
 ]
 
