@@ -1,3 +1,15 @@
+1.0.0 (2021-12-14)
+------------------
+- Drop python 2 support
+- Upgrade all requirements (#86)
+
+0.5.1 (2020-10-06)
+------------------
+
+- Prevent get_by_uri erroring on non-Getty URI's (#77)
+- Remove reference to nose.collector
+- Remove pyup integration
+
 0.5.0 (2020-08-06)
 ------------------
 

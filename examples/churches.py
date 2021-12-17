@@ -1,5 +1,4 @@
 #!/usr/bin/python
-# -*- coding: utf-8 -*-
 '''
 This script demonstrates using the AATProvider to get the concept of
 Churches.
@@ -9,20 +8,20 @@ from skosprovider_getty.providers import AATProvider
 
 aat = AATProvider(metadata={'id': 'AAT'})
 
-churches = aat.get_by_id(300007466)
+churches = aat.get_by_id('300007466')
 
-lang = ['en', 'nl', 'es', 'de', 'fr']
+langs = ['en', 'nl', 'es', 'de', 'fr']
 
 print('Label per language')
 print('------------------')
-for l in lang:
-    label = churches.label(l)
-    print(l + ' --> ' + label.language + ': ' + label.label + ' [' + label.type + ']')
+for lang in langs:
+    label = churches.label(lang)
+    print(lang + ' --> ' + label.language + ': ' + label.label + ' [' + label.type + ']')
 
 print('All Labels')
 print('----------')
-for l in churches.labels:
-   print(l.language + ': ' + l.label + ' [' + l.type + ']')
+for lang in churches.labels:
+    print(lang.language + ': ' + lang.label + ' [' + lang.type + ']')
 
 print('All Notes')
 print('---------')

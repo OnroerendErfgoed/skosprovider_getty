@@ -1,30 +1,32 @@
-# -*- coding: utf-8 -*-
-
 '''
 This module contains utility functions for :mod:`skosprovider_getty`.
 '''
-import requests
-import rdflib
-from rdflib.graph import Graph
-from rdflib.term import URIRef
-from requests.exceptions import ConnectionError, Timeout
-from skosprovider.exceptions import ProviderUnavailableException
-
-from skosprovider.skos import (
-    Concept,
-    Collection,
-    Label,
-    Note,
-    ConceptScheme)
-
 import logging
+
+import rdflib
+import requests
+from rdflib.graph import Graph
+from rdflib.namespace import DC
+from rdflib.namespace import RDF
+from rdflib.namespace import RDFS
+from rdflib.namespace import SKOS
+from rdflib.term import URIRef
+from requests.exceptions import ConnectionError
+from requests.exceptions import Timeout
+from skosprovider.exceptions import ProviderUnavailableException
+from skosprovider.skos import Collection
+from skosprovider.skos import Concept
+from skosprovider.skos import ConceptScheme
+from skosprovider.skos import Label
+from skosprovider.skos import Note
+
 log = logging.getLogger(__name__)
 
-from rdflib.namespace import RDFS, RDF, SKOS, DC
 
 PROV = rdflib.Namespace('http://www.w3.org/ns/prov#')
 ISO = rdflib.Namespace('http://purl.org/iso25964/skos-thes#')
 GVP = rdflib.Namespace('http://vocab.getty.edu/ontology#')
+
 
 def conceptscheme_from_uri(conceptscheme_uri, **kwargs):
     '''
@@ -75,14 +77,14 @@ def things_from_graph(graph, subclasses, conceptscheme, **kwargs):
         con = Concept(
             uri_to_id(uri),
             uri=uri,
-            concept_scheme = conceptscheme,
-            labels = _create_from_subject_typelist(graph, sub, valid_label_types),
-            notes = _create_from_subject_typelist(graph, sub, hierarchy_notetypes(Note.valid_types)),
-            sources = [],
-            broader = _create_from_subject_predicate(graph, sub, SKOS.broader),
-            narrower = _create_from_subject_predicate(graph, sub, SKOS.narrower),
-            related = _create_from_subject_predicate(graph, sub, SKOS.related),
-            subordinate_arrays = _create_from_subject_predicate(graph, sub, ISO.subordinateArray),
+            concept_scheme=conceptscheme,
+            labels=_create_from_subject_typelist(graph, sub, valid_label_types),
+            notes=_create_from_subject_typelist(graph, sub, hierarchy_notetypes(Note.valid_types)),
+            sources=[],
+            broader=_create_from_subject_predicate(graph, sub, SKOS.broader),
+            narrower=_create_from_subject_predicate(graph, sub, SKOS.narrower),
+            related=_create_from_subject_predicate(graph, sub, SKOS.related),
+            subordinate_arrays=_create_from_subject_predicate(graph, sub, ISO.subordinateArray),
             matches=matches
         )
         clist.append(con)
@@ -92,12 +94,12 @@ def things_from_graph(graph, subclasses, conceptscheme, **kwargs):
         col = Collection(
             uri_to_id(uri),
             uri=uri,
-            concept_scheme = conceptscheme,
-            labels = _create_from_subject_typelist(graph, sub, valid_label_types),
-            notes = _create_from_subject_typelist(graph, sub, hierarchy_notetypes(Note.valid_types)),
-            sources = [],
-            members = _create_from_subject_predicate(graph, sub, SKOS.member),
-            superordinates = _get_super_ordinates(conceptscheme, sub, session=s)
+            concept_scheme=conceptscheme,
+            labels=_create_from_subject_typelist(graph, sub, valid_label_types),
+            notes=_create_from_subject_typelist(graph, sub, hierarchy_notetypes(Note.valid_types)),
+            sources=[],
+            members=_create_from_subject_predicate(graph, sub, SKOS.member),
+            superordinates=_get_super_ordinates(conceptscheme, sub, session=s)
         )
         clist.append(col)
 
@@ -116,8 +118,8 @@ def _create_from_subject_typelist(graph, subject, typelist):
 def _get_super_ordinates(conceptscheme, sub, **kwargs):
     ret = []
     s = kwargs.get('session', requests.Session())
-    query = """PREFIX ns:<%s>
-    SELECT * WHERE {?s iso-thes:subordinateArray ns:%s}""" % (conceptscheme.uri, uri_to_id(sub))
+    query = """PREFIX ns:<{}>
+    SELECT * WHERE {{?s iso-thes:subordinateArray ns:{}}}""".format(conceptscheme.uri, uri_to_id(sub))
     url = conceptscheme.uri.strip('/').rsplit('/', 1)[0] + "/sparql.json"
     res = do_get_request(url, s, params={'query': query})
     r = res.json()
@@ -150,18 +152,18 @@ def _create_label(literal, type):
     if language is None:
         language = 'und'
     try:
-        l = Label(literal.toPython(), type, language)
-    except ValueError as e:
+        lang = Label(literal.toPython(), type, language)
+    except ValueError:
         log.warn('Received a label with an invalid language tag: %s.', language)
-        l = Label(literal.toPython(), type, 'und')
-    return l
+        lang = Label(literal.toPython(), type, 'und')
+    return lang
 
 
 def _create_note(graph, uri, type, change_notes=False):
     if not change_notes and '/rev/' in uri:
         return None
     else:
-        note = u''
+        note = ''
         language = 'en'
 
         # http://vocab.getty.edu/aat/scopeNote
@@ -184,6 +186,7 @@ class SubClassCollector:
     '''
     A utility class to collect all the subclasses of a certain Class from an ontology file.
     '''
+
     def __init__(self, namespace):
         self.ontology_graphs = {}
         self.namespace = namespace
@@ -232,12 +235,12 @@ class SubClassCollector:
         if self.namespace not in self.ontology_graphs:
             try:
                 graph = rdflib.Graph()
-                result = graph.parse(str(self.namespace), format="application/rdf+xml")
+                graph.parse(str(self.namespace), format="application/rdf+xml")
                 self.ontology_graphs[self.namespace] = graph
-            except: # pragma: no cover
+            except:  # pragma: no cover # noqa: E722
                 self.ontology_graphs[self.namespace] = None
         g = self.ontology_graphs[self.namespace]
-        if not g is None:
+        if g is not None:
             for sub, pred, obj in g.triples((None, RDFS.subClassOf, None)):
                 self._is_subclass_of(sub, clazz)
         return self.subclasses[clazz]
@@ -249,12 +252,12 @@ class SubClassCollector:
         if namespace not in self.ontology_graphs:
             try:
                 graph = rdflib.Graph()
-                result = graph.parse(str(namespace), format="application/rdf+xml")
+                graph.parse(str(namespace), format="application/rdf+xml")
                 self.ontology_graphs[namespace] = graph
-            except: # pragma: no cover
+            except:  # pragma: no cover # noqa: E722
                 self.ontology_graphs[namespace] = None
         g = self.ontology_graphs[namespace]
-        if not g is None:
+        if g is not None:
             for sub, pred, obj in g.triples((subject, RDFS.subClassOf, None)):
                 if obj in self.subclasses[clazz]:
                     self.subclasses[clazz].append(subject)
@@ -279,7 +282,10 @@ def hierarchy_notetypes(list):
 
 
 def uri_to_id(uri):
-    return uri.strip('/').rsplit('/', 1)[1]
+    try:
+        return uri.strip('/').rsplit('/', 1)[1]
+    except IndexError:
+        return uri
 
 
 def uri_to_graph(uri, **kwargs):
@@ -304,11 +310,12 @@ def do_get_request(url, session=None, headers=None, params=None):
     try:
         res = session.get(url, headers=headers, params=params)
     except ConnectionError:
-        raise ProviderUnavailableException("Request could not be executed due to connection issues- Request: %s" % (url,))
-    except Timeout: # pragma: no cover
-        raise ProviderUnavailableException("Request could not be executed due to timeout - Request: %s" % (url,))
+        raise ProviderUnavailableException(f"Request could not be executed due to connection issues- Request: {url}")
+    except Timeout:  # pragma: no cover
+        raise ProviderUnavailableException(f"Request could not be executed due to timeout - Request: {url}")
     if res.status_code >= 500:
-        raise ProviderUnavailableException("Request could not be executed due to server issues - Request: %s. Response: %s." % (url, res.content))
+        raise ProviderUnavailableException(
+            f"Request could not be executed due to server issues - Request: {url}. Response: {res.content}.")
     if not res.encoding:
         res.encoding = 'utf-8'
     return res

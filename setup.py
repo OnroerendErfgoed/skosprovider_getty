@@ -1,9 +1,6 @@
 import os
 
-try:
-    from setuptools import setup, find_packages
-except ImportError:
-    from distutils.core import setup
+from setuptools import setup
 
 here = os.path.abspath(os.path.dirname(__file__))
 README = open(os.path.join(here, 'README.rst')).read()
@@ -14,14 +11,14 @@ packages = [
 ]
 
 requires = [
-    'skosprovider>=0.7.0',
+    'skosprovider>=1.1.0',
     'requests',
     'rdflib'
 ]
 
 setup(
     name='skosprovider_getty',
-    version='0.5.0',
+    version='1.0.0',
     description='Skosprovider implementation of the Getty Vocabularies',
     long_description=README + '\n\n' + CHANGES,
     long_description_content_type='text/x-rst',
@@ -43,6 +40,5 @@ setup(
     author='Flanders Heritage Agency',
     author_email='ict@onroerenderfgoed.be',
     url='https://github.com/OnroerendErfgoed/skosprovider_getty',
-    keywords='getty skos skosprovider vocabulary AAT TGN ULAN',
-    test_suite='nose.collector'
+    keywords='getty skos skosprovider vocabulary AAT TGN ULAN'
 )

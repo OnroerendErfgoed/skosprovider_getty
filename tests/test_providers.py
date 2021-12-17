@@ -1,18 +1,14 @@
 #!/usr/bin/python
-# -*- coding: utf-8 -*-
-import pytest
-from rdflib.namespace import SKOS, Namespace
+import unittest
 
+import pytest
+import requests
 from skosprovider.exceptions import ProviderUnavailableException
 
-from skosprovider_getty.providers import (
-    AATProvider,
-    TGNProvider,
-    ULANProvider,
-    GettyProvider
-)
-import unittest
-from skosprovider_getty.utils import SubClassCollector
+from skosprovider_getty.providers import AATProvider
+from skosprovider_getty.providers import GettyProvider
+from skosprovider_getty.providers import TGNProvider
+from skosprovider_getty.providers import ULANProvider
 
 global clazzes, ontologies
 clazzes = []
@@ -22,7 +18,6 @@ ontologies = {}
 class GettyProviderTests(unittest.TestCase):
 
     def test_set_custom_session(self):
-        import requests
         sess = requests.Session()
         provider = AATProvider({'id': 'AAT'}, session=sess)
         self.assertEqual(sess, provider.session)
@@ -36,7 +31,7 @@ class GettyProviderTests(unittest.TestCase):
     def test_override_instance_scopes(self):
         provider = AATProvider(
             {'id': 'AAT'},
-            allowed_instance_scopes = ['single']
+            allowed_instance_scopes=['single']
         )
         assert provider.allowed_instance_scopes == ['single']
 
@@ -69,14 +64,14 @@ class GettyProviderTests(unittest.TestCase):
         self.assertEqual(concept['type'], 'concept')
         self.assertIsInstance(concept['labels'], list)
 
-        preflabels = [{'nl': 'kerken'}, {'de': u'Kirche (Gebäude)'}]
+        preflabels = [{'nl': 'kerken'}, {'de': 'Kirche (Gebäude)'}]
         preflabels_conc = [{label.language: label.label} for label in concept['labels']
                            if label.type == 'prefLabel']
         self.assertGreater(len(preflabels_conc), 0)
         for label in preflabels:
             self.assertIn(label, preflabels_conc)
 
-        altlabels = [{u'nl': 'kerk'}, {u'de': u'kirchen (Gebäude)'}]
+        altlabels = [{'nl': 'kerk'}, {'de': 'kirchen (Gebäude)'}]
         altlabels_conc = [{label.language: label.label} for label in concept['labels']
                           if label.type == 'altLabel']
         self.assertGreater(len(altlabels_conc), 0)
@@ -86,8 +81,10 @@ class GettyProviderTests(unittest.TestCase):
         self.assertGreater(len(concept['notes']), 0)
 
         self.assertEqual(concept['id'], '300007466')
-        #todo gvp:broader is not a subproperty of skos:broader anymore. This is the reason why there are no broader elements anymore belonging to the Concept...to be decided what to do...
-        #self.assertEqual(concept['broader'][0], '300007391')
+        # todo gvp:broader is not a subproperty of skos:broader anymore. This is the
+        #  reason why there are no broader elements anymore belonging to the Concept...
+        #  to be decided what to do...
+        # self.assertEqual(concept['broader'][0], '300007391')
         self.assertIn('300312247', concept['related'])
 
     def test_get_by_id_collection(self):
@@ -95,8 +92,9 @@ class GettyProviderTests(unittest.TestCase):
         assert collection is not False
         assert collection.uri == 'http://vocab.getty.edu/aat/300007473'
         assert collection.type == 'collection'
-        assert u'<kerken naar vorm>' in [label.label for label in collection.labels if label.language == 'nl' and label.type == 'prefLabel']
-        assert len(collection.notes) ==  0
+        assert '<kerken naar vorm>' in [
+            label.label for label in collection.labels if label.language == 'nl' and label.type == 'prefLabel']
+        assert len(collection.notes) == 0
 
     def test_get_by_id_invalid(self):
         concept = AATProvider({'id': 'AAT'}).get_by_id('123')
@@ -114,7 +112,7 @@ class GettyProviderTests(unittest.TestCase):
         concept = concept.__dict__
         self.assertEqual(concept['id'], '300138225')
         self.assertIn('300138225-array', concept['subordinate_arrays'])
-        #300126352
+        # 300126352
 
     def test_get_by_uri(self):
         # Default GettyProvider is an AAT provider
@@ -123,11 +121,18 @@ class GettyProviderTests(unittest.TestCase):
         self.assertEqual(concept['uri'], 'http://vocab.getty.edu/aat/300007466')
         self.assertEqual(concept['id'], '300007466')
 
+    def test_get_by_uri_invalid(self):
+        # Default GettyProvider is an AAT provider
+        concept = GettyProvider({'id': 'AAT'}).get_by_uri('urn:skosprovider:5')
+        self.assertFalse(concept)
+        concept = GettyProvider({'id': 'AAT'}).get_by_uri('https://id.erfgoed.net/thesauri/materialen/7')
+        self.assertFalse(concept)
+
     def test_get_by_id_tgn(self):
         concept = TGNProvider({'id': 'TGN'}).get_by_id('1000063')
         concept = concept.__dict__
         self.assertEqual(concept['uri'], 'http://vocab.getty.edu/tgn/1000063')
-        self.assertIn(u'België', [label.label for label in concept['labels']
+        self.assertIn('België', [label.label for label in concept['labels']
                                  if label.language == 'nl' and label.type == 'prefLabel'])
 
     def test_get_all(self):
@@ -142,11 +147,11 @@ class GettyProviderTests(unittest.TestCase):
         keys_first_display = top_TGN_display[0].keys()
         for key in ['id', 'type', 'label', 'uri']:
             self.assertIn(key, keys_first_display)
-        self.assertIn(u'World', [label['label'] for label in top_TGN_display])
+        self.assertIn('World', [label['label'] for label in top_TGN_display])
         top_AAT_display = AATProvider({'id': 'AAT', 'default_language': 'nl'}).get_top_display()
         self.assertIsInstance(top_AAT_display, list)
         self.assertGreater(len(top_AAT_display), 0)
-        self.assertIn(u'Facet Stijlen en perioden', [label['label'] for label in top_AAT_display])
+        self.assertIn('Facet Stijlen en perioden', [label['label'] for label in top_AAT_display])
 
     def test_get_top_concepts(self):
         kwargs = {'language': 'nl'}
@@ -156,13 +161,14 @@ class GettyProviderTests(unittest.TestCase):
 
     def test_get_childeren_display(self):
         kwargs = {'language': 'nl'}
-        childeren_tgn_belgie = TGNProvider({'id': 'TGN', 'default_language': 'nl'}).get_children_display('1000063', **kwargs)
+        childeren_tgn_belgie = TGNProvider({'id': 'TGN', 'default_language': 'nl'}
+                                           ).get_children_display('1000063', **kwargs)
         self.assertIsInstance(childeren_tgn_belgie, list)
         self.assertGreater(len(childeren_tgn_belgie), 0)
         keys_first_display = childeren_tgn_belgie[0].keys()
         for key in ['id', 'type', 'label', 'uri']:
             self.assertIn(key, keys_first_display)
-        self.assertIn(u'Brussels Hoofdstedelijk Gewest', [label['label'] for label in childeren_tgn_belgie])
+        self.assertIn('Brussels Hoofdstedelijk Gewest', [label['label'] for label in childeren_tgn_belgie])
 
     def test_expand(self):
         all_childeren_churches = AATProvider({'id': 'AAT'}).expand('300007466')
@@ -185,16 +191,20 @@ class GettyProviderTests(unittest.TestCase):
         self.assertIsInstance(r, list)
 
     def test_find_wrong_type(self):
-        self.assertRaises(ValueError, AATProvider({'id': 'AAT'}).find, {'type': 'collectie', 'collection': {'id': '300007466', 'depth': 'all'}})
+        self.assertRaises(ValueError, AATProvider({'id': 'AAT'}).find, {
+            'type': 'collectie', 'collection': {'id': '300007466', 'depth': 'all'}})
 
     def test_find_no_collection_id(self):
-        self.assertRaises(ValueError, AATProvider({'id': 'AAT'}).find, {'type': 'collection', 'collection': {'depth': 'all'}})
+        self.assertRaises(ValueError, AATProvider({'id': 'AAT'}).find, {
+            'type': 'collection', 'collection': {'depth': 'all'}})
 
     def test_find_wrong_collection_depth(self):
-        self.assertRaises(ValueError, AATProvider({'id': 'AAT'}).find, {'type': 'concept', 'collection': {'id': '300007466', 'depth': 'allemaal'}})
+        self.assertRaises(ValueError, AATProvider({'id': 'AAT'}).find, {
+            'type': 'concept', 'collection': {'id': '300007466', 'depth': 'allemaal'}})
 
     def test_find_concepts_in_collection(self):
-        r = AATProvider({'id': 'AAT'}).find({'label': 'church', 'type': 'concept', 'collection': {'id': '300007466', 'depth': 'all'}})
+        r = AATProvider({'id': 'AAT'}).find({'label': 'church', 'type': 'concept',
+                                             'collection': {'id': '300007466', 'depth': 'all'}})
         self.assertIsInstance(r, list)
         self.assertGreater(len(r), 0)
         for res in r:
@@ -208,14 +218,16 @@ class GettyProviderTests(unittest.TestCase):
             assert res['type'] == 'concept'
 
     def test_find_member_concepts_in_collection(self):
-        r = AATProvider({'id': 'AAT'}).find({'label': 'church', 'type': 'concept', 'collection': {'id': '300007494', 'depth': 'members'}})
+        r = AATProvider({'id': 'AAT'}).find({'label': 'church', 'type': 'concept',
+                                             'collection': {'id': '300007494', 'depth': 'members'}})
         self.assertIsInstance(r, list)
         self.assertGreater(len(r), 0)
         for res in r:
             assert res['type'] == 'concept'
 
     def test_find_collections_in_collection(self):
-        r = AATProvider({'id': 'AAT'}).find({'label': 'church', 'type': 'collection', 'collection': {'id': '300007466', 'depth': 'all'}})
+        r = AATProvider({'id': 'AAT'}).find({'label': 'church', 'type': 'collection',
+                                             'collection': {'id': '300007466', 'depth': 'all'}})
         assert len(r) > 0
         for res in r:
             assert res['type'] == 'collection'
@@ -263,8 +275,9 @@ class GettyProviderTests(unittest.TestCase):
             assert res['type'] == 'concept'
 
     def test_find_member_collections_in_collection(self):
-        r = AATProvider({'id': 'AAT'}).find({'label': 'church', 'type': 'collection', 'collection': {'id': '300007466', 'depth': 'members'}})
-        assert len (r) > 0
+        r = AATProvider({'id': 'AAT'}).find({'label': 'church', 'type': 'collection',
+                                             'collection': {'id': '300007466', 'depth': 'members'}})
+        assert len(r) > 0
         for res in r:
             assert res['type'] == 'collection'
 
@@ -275,14 +288,15 @@ class GettyProviderTests(unittest.TestCase):
         assert r[0]['uri'] == 'http://vocab.getty.edu/aat/300191778'
 
     def test_find_closematches(self):
-        r = AATProvider({'id': 'AAT'}).find({'matches': {'uri': 'http://id.loc.gov/authorities/subjects/sh85123119', 'type': 'close'}})
+        r = AATProvider({'id': 'AAT'}).find(
+            {'matches': {'uri': 'http://id.loc.gov/authorities/subjects/sh85123119', 'type': 'close'}})
         assert len(r) == 1
         assert r[0]['type'] == 'concept'
         assert r[0]['uri'] == 'http://vocab.getty.edu/aat/300191778'
 
     def test_find_matches_no_uri(self):
         with pytest.raises(ValueError):
-            r = AATProvider({'id': 'AAT'}).find({'matches': {'type': 'close'}})
+            AATProvider({'id': 'AAT'}).find({'matches': {'type': 'close'}})
 
     def test_answer_wrong_query(self):
         with pytest.raises(ProviderUnavailableException):
