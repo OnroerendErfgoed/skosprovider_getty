@@ -110,7 +110,7 @@ def _create_from_subject_typelist(graph, subject, typelist):
     list = []
     note_uris = []
     for p in typelist:
-        term = SKOS.term(p)
+        term = SKOS.__getitem__(p)
         list.extend(_create_from_subject_predicate(graph, subject, term, note_uris))
     return list
 
@@ -300,7 +300,7 @@ def uri_to_graph(uri, **kwargs):
     res = do_get_request(uri, s)
     if res.status_code == 404:
         return False
-    graph.parse(data=res.content)
+    graph.parse(data=res.content, format="application/rdf+xml")
     return graph
 
 

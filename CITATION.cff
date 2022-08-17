@@ -36,35 +36,6 @@ references:
         email: koen.vandaele@vlaanderen.be
         affiliation: Flanders Heritage Agency
         orcid: 'https://orcid.org/0000-0002-8153-2978'
-  - doi: 10.5281/zenodo.5801135
-    type: software
-    title: Atramhasis
-    authors:
-      - given-names: Koen
-        family-names: Van Daele
-        email: koen.vandaele@vlaanderen.be
-        affiliation: Agentschap Onroerend Erfgoed
-        orcid: 'https://orcid.org/0000-0002-8153-2978'
-      - given-names: Bart
-        family-names: Saelen
-        affiliation: Geo Solutions
-      - given-names: Maarten
-        family-names: Taeymans
-        affiliation: Geo Solutions
-      - given-names: Jonathan
-        family-names: Piraux
-      - given-names: Tinne
-        family-names: Cahy
-      - given-names: Cedrik
-        family-names: Vanderhaegen
-      - given-names: Jonas
-        family-names: Geuens
-        affiliation: Agentschap Onroerend Erfgoed
-        orcid: 'https://orcid.org/0000-0001-8197-5034'
-      - given-names: Wim
-        family-names: De Clercq
-      - given-names: Bram
-        family-names: Goessens
 keywords:
   - SKOS
   - thesaurus
