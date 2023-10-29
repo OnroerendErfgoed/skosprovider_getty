@@ -154,7 +154,7 @@ def _create_label(literal, type):
     try:
         lang = Label(literal.toPython(), type, language)
     except ValueError:
-        log.warn('Received a label with an invalid language tag: %s.', language)
+        log.warning('Received a label with an invalid language tag: %s.', language)
         lang = Label(literal.toPython(), type, 'und')
     return lang
 
