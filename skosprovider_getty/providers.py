@@ -16,6 +16,8 @@ import warnings
 import requests
 from language_tags import tags
 from skosprovider.providers import VocabularyProvider
+from skosprovider.skos import ConceptScheme
+from skosprovider.skos import Label
 
 from skosprovider_getty.utils import GVP
 from skosprovider_getty.utils import SubClassCollector
@@ -64,6 +66,11 @@ class GettyProvider(VocabularyProvider):
             ['single', 'threaded_thread']
         )
         self._conceptscheme = None
+
+        if 'concept_scheme' in kwargs:
+            self._conceptscheme = kwargs.get('concept_scheme')
+        else:
+            self._conceptscheme = None
 
     @property
     def concept_scheme(self):
@@ -434,6 +441,13 @@ class AATProvider(GettyProvider):
             metadata,
             base_url='http://vocab.getty.edu/',
             vocab_id='aat',
+            concept_scheme = ConceptScheme(
+                uri='http://vocab.getty.edu/aat/',
+                labels=[
+                    Label('Art and Architecture Thesaurus', 'prefLabel', 'en'),
+                    Label('AAT', 'altLabel', 'en'),
+                ]
+            ),
             **kwargs
         )
 
@@ -452,6 +466,13 @@ class TGNProvider(GettyProvider):
             metadata,
             base_url='http://vocab.getty.edu/',
             vocab_id='tgn',
+            concept_scheme = ConceptScheme(
+                uri='http://vocab.getty.edu/tgn/',
+                labels=[
+                    Label('Thesaurus of Geographic Names', 'prefLabel', 'en'),
+                    Label('AAT', 'altLabel', 'en'),
+                ]
+            ),
             **kwargs
         )
 
@@ -471,5 +492,12 @@ class ULANProvider(GettyProvider):
             metadata,
             base_url='http://vocab.getty.edu/',
             vocab_id='ulan',
+            concept_scheme = ConceptScheme(
+                uri='http://vocab.getty.edu/ulan/',
+                labels=[
+                    Label('Union List of Artist Names', 'prefLabel', 'en'),
+                    Label('ULAN', 'altLabel', 'en'),
+                ]
+            ),
             **kwargs
         )

@@ -15,80 +15,94 @@ clazzes = []
 ontologies = {}
 
 
-class GettyProviderTests(unittest.TestCase):
+class GettyProviderConfigTests():
+
+    def _get_provider(self):
+        # Default GettyProvider is an AAT provider
+        return GettyProvider(
+            {'id': 'AAT'}
+        )
 
     def test_set_custom_session(self):
         sess = requests.Session()
+        # Default GettyProvider is an AAT provider
         provider = AATProvider({'id': 'AAT'}, session=sess)
-        self.assertEqual(sess, provider.session)
+        assert sess == provider.session
 
     def test_allowed_instance_scopes(self):
+        # Default GettyProvider is an AAT provider
         provider = AATProvider({'id': 'AAT'})
         assert provider.allowed_instance_scopes == [
             'single', 'threaded_thread'
         ]
 
     def test_override_instance_scopes(self):
-        provider = AATProvider(
+        # Default GettyProvider is an AAT provider
+        provider = GettyProvider(
             {'id': 'AAT'},
             allowed_instance_scopes=['single']
         )
         assert provider.allowed_instance_scopes == ['single']
 
     def test_concept_scheme_is_cached(self):
-        provider = AATProvider(
-            {'id': 'AAT'}
-        )
+        provider = self._get_provider()
         assert provider._conceptscheme is None
         cs = provider.concept_scheme
         assert provider._conceptscheme == cs
 
     def test_get_vocabulary_uri(self):
-        provider = AATProvider(
-            {'id': 'AAT'}
-        )
+        provider = self._get_provider()
         assert 'http://vocab.getty.edu/aat/' == provider.get_vocabulary_uri()
 
     def test_get_vocabulary_uri_does_not_load_cs(self):
-        provider = ULANProvider(
-            {'id': 'ULAN'}
-        )
+        provider = self._get_provider()
         assert provider._conceptscheme is None
         assert 'http://vocab.getty.edu/ulan/' == provider.get_vocabulary_uri()
         assert provider._conceptscheme is None
 
+
+class GettyProviderBasicTests():
+
+    def _get_provider(self):
+        return GettyProvider(
+            {'id': 'AAT'},
+            base_url = 'http://vocab.getty.edu',
+            vocab_id = 'aat'
+        )
+
     def test_get_by_id_concept(self):
-        concept = AATProvider({'id': 'AAT'}).get_by_id('300007466', change_notes=True)
-        concept = concept.__dict__
-        self.assertEqual(concept['uri'], 'http://vocab.getty.edu/aat/300007466')
-        self.assertEqual(concept['type'], 'concept')
-        self.assertIsInstance(concept['labels'], list)
+        provider = self._get_provider()
+        concept = provider.get_by_id('300007466', change_notes=True)
+        assert concept.uri == 'http://vocab.getty.edu/aat/300007466'
+        assert concept.type == 'concept'
+        assert isinstance(concept.labels, list)
 
         preflabels = [{'nl': 'kerken'}, {'de': 'Kirche (Gebäude)'}]
-        preflabels_conc = [{label.language: label.label} for label in concept['labels']
+        preflabels_conc = [{label.language: label.label} for label in concept.labels
                            if label.type == 'prefLabel']
-        self.assertGreater(len(preflabels_conc), 0)
+        assert len(preflabels_conc) > 0
         for label in preflabels:
-            self.assertIn(label, preflabels_conc)
+            assert label in preflabels_conc
 
         altlabels = [{'nl': 'kerk'}, {'de': 'kirchen (Gebäude)'}]
-        altlabels_conc = [{label.language: label.label} for label in concept['labels']
+        altlabels_conc = [{label.language: label.label} for label in concept.labels
                           if label.type == 'altLabel']
-        self.assertGreater(len(altlabels_conc), 0)
+        assert len(altlabels_conc) > 0
         for label in altlabels:
-            self.assertIn(label, altlabels_conc)
+            assert label in altlabels_conc
 
-        self.assertGreater(len(concept['notes']), 0)
+        assert len(concept.notes)
 
-        self.assertEqual(concept['id'], '300007466')
+        assert concept.id == '300007466'
         # todo gvp:broader is not a subproperty of skos:broader anymore. This is the
         #  reason why there are no broader elements anymore belonging to the Concept...
         #  to be decided what to do...
         # self.assertEqual(concept['broader'][0], '300007391')
-        self.assertIn('300312247', concept['related'])
+        assert '300312247' in concept['related']
 
     def test_get_by_id_collection(self):
-        collection = AATProvider({'id': 'AAT'}).get_by_id('300007473')
+        # Default GettyProvider is an AAT provider
+        collection = GettyProvider({'id': 'AAT'}).get_by_id('300007473')
         assert collection is not False
         assert collection.uri == 'http://vocab.getty.edu/aat/300007473'
         assert collection.type == 'collection'
@@ -97,8 +111,9 @@ class GettyProviderTests(unittest.TestCase):
         assert len(collection.notes) == 0
 
     def test_get_by_id_invalid(self):
-        concept = AATProvider({'id': 'AAT'}).get_by_id('123')
-        self.assertFalse(concept)
+        # Default GettyProvider is an AAT provider
+        concept = GettyProvider({'id': 'AAT'}).get_by_id('123')
+        assert not concept
 
     def test_get_by_id_superordinates(self):
         # Default GettyProvider is an AAT provider
@@ -109,9 +124,8 @@ class GettyProviderTests(unittest.TestCase):
     def test_get_by_id_subOrdinateArrays(self):
         # Default GettyProvider is an AAT provider
         concept = GettyProvider({'id': 'AAT'}).get_by_id('300138225')
-        concept = concept.__dict__
-        self.assertEqual(concept['id'], '300138225')
-        self.assertIn('300138225-array', concept['subordinate_arrays'])
+        assert concept.id == '300138225'
+        assert '300138225-array' in concept['subordinate_arrays']
         # 300126352
 
     def test_get_by_uri(self):
@@ -128,47 +142,8 @@ class GettyProviderTests(unittest.TestCase):
         concept = GettyProvider({'id': 'AAT'}).get_by_uri('https://id.erfgoed.net/thesauri/materialen/7')
         self.assertFalse(concept)
 
-    def test_get_by_id_tgn(self):
-        concept = TGNProvider({'id': 'TGN'}).get_by_id('1000063')
-        concept = concept.__dict__
-        self.assertEqual(concept['uri'], 'http://vocab.getty.edu/tgn/1000063')
-        self.assertIn('België', [label.label for label in concept['labels']
-                                 if label.language == 'nl' and label.type == 'prefLabel'])
 
-    def test_get_all(self):
-        kwargs = {'language': 'nl'}
-        self.assertFalse(TGNProvider({'id': 'TGN'}).get_all(**kwargs))
-
-    def test_get_top_display(self):
-        kwargs = {'language': 'nl'}
-        top_TGN_display = TGNProvider({'id': 'TGN', 'default_language': 'en'}).get_top_display(**kwargs)
-        self.assertIsInstance(top_TGN_display, list)
-        self.assertGreater(len(top_TGN_display), 0)
-        keys_first_display = top_TGN_display[0].keys()
-        for key in ['id', 'type', 'label', 'uri']:
-            self.assertIn(key, keys_first_display)
-        self.assertIn('World', [label['label'] for label in top_TGN_display])
-        top_AAT_display = AATProvider({'id': 'AAT', 'default_language': 'nl'}).get_top_display()
-        self.assertIsInstance(top_AAT_display, list)
-        self.assertGreater(len(top_AAT_display), 0)
-        self.assertIn('Facet Stijlen en perioden', [label['label'] for label in top_AAT_display])
-
-    def test_get_top_concepts(self):
-        kwargs = {'language': 'nl'}
-        top_TGN_concepts = TGNProvider({'id': 'TGN'}).get_top_concepts(**kwargs)
-        self.assertIsInstance(top_TGN_concepts, list)
-        self.assertEqual(len(top_TGN_concepts), 0)
-
-    def test_get_childeren_display(self):
-        kwargs = {'language': 'nl'}
-        childeren_tgn_belgie = TGNProvider({'id': 'TGN', 'default_language': 'nl'}
-                                           ).get_children_display('1000063', **kwargs)
-        self.assertIsInstance(childeren_tgn_belgie, list)
-        self.assertGreater(len(childeren_tgn_belgie), 0)
-        keys_first_display = childeren_tgn_belgie[0].keys()
-        for key in ['id', 'type', 'label', 'uri']:
-            self.assertIn(key, keys_first_display)
-        self.assertIn('Brussels Hoofdstedelijk Gewest', [label['label'] for label in childeren_tgn_belgie])
+class AATProviderTests(unittest.TestCase):
 
     def test_expand(self):
         all_childeren_churches = AATProvider({'id': 'AAT'}).expand('300007466')
@@ -304,7 +279,7 @@ class GettyProviderTests(unittest.TestCase):
             provider._get_answer("Wrong SPARQL query")
 
 
-class ULANProviderTests(unittest.TestCase):
+class ULANProviderTests():
 
     def test_ulan_exists(self):
         ulan = ULANProvider({'id': 'ULAN'})
@@ -330,3 +305,52 @@ class ULANProviderTests(unittest.TestCase):
         assert ['500331524', '500082691'] == [a['id'] for a in res]
         res = ulan.find({'label': 'braem'}, sort='sortlabel', sort_order='desc')
         assert ['500331524', '500082691'] == [a['id'] for a in res]
+
+
+class TGNProviderTests():
+
+    def test_tgn_exists(self):
+        tgn = TGNProvider({'id': 'TGN'})
+        assert isinstance(tgn, TGNProvider)
+
+    def test_get_by_id_tgn(self):
+        concept = TGNProvider({'id': 'TGN'}).get_by_id('1000063')
+        concept = concept.__dict__
+        assert concept.uri  == 'http://vocab.getty.edu/tgn/1000063'
+        assert 'België' in [label.label for label in concept['labels']
+                                 if label.language == 'nl' and label.type == 'prefLabel']
+
+    def test_get_all(self):
+        kwargs = {'language': 'nl'}
+        assert not TGNProvider({'id': 'TGN'}).get_all(**kwargs)
+
+    def test_get_top_display(self):
+        kwargs = {'language': 'nl'}
+        top_TGN_display = TGNProvider({'id': 'TGN', 'default_language': 'en'}).get_top_display(**kwargs)
+        assert isinstance(top_TGN_display, list)
+        assert len(top_TGN_display) > 0
+        keys_first_display = top_TGN_display[0].keys()
+        for key in ['id', 'type', 'label', 'uri']:
+            assert key in keys_first_display
+        assert 'World' in [label['label'] for label in top_TGN_display]
+        top_AAT_display = AATProvider({'id': 'AAT', 'default_language': 'nl'}).get_top_display()
+        assert isinstance(top_AAT_display, list)
+        assert len(top_AAT_display) > 0
+        assert 'Facet Stijlen en perioden' in [label['label'] for label in top_AAT_display]
+
+    def test_get_top_concepts(self):
+        kwargs = {'language': 'nl'}
+        top_TGN_concepts = TGNProvider({'id': 'TGN'}).get_top_concepts(**kwargs)
+        assert isinstance(top_TGN_concepts, list)
+        assert len(top_TGN_concepts) > 0
+
+    def test_get_childeren_display(self):
+        kwargs = {'language': 'nl'}
+        childeren_tgn_belgie = TGNProvider({'id': 'TGN', 'default_language': 'nl'}
+                                           ).get_children_display('1000063', **kwargs)
+        assert isinstance(childeren_tgn_belgie, list)
+        assert len(childeren_tgn_belgie) > 0
+        keys_first_display = childeren_tgn_belgie[0].keys()
+        for key in ['id', 'type', 'label', 'uri']:
+            assert key in keys_first_display
+        assert 'Brussels Hoofdstedelijk Gewest' in [label['label'] for label in childeren_tgn_belgie]
