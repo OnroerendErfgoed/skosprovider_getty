@@ -65,8 +65,6 @@ class GettyProvider(VocabularyProvider):
             'allowed_instance_scopes',
             ['single', 'threaded_thread']
         )
-        self._conceptscheme = None
-
         if 'concept_scheme' in kwargs:
             self._conceptscheme = kwargs.get('concept_scheme')
         else:
