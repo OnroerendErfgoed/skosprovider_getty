@@ -34,9 +34,13 @@ Glossary
     More information: http://www.getty.edu
 
    AAT
-    `The Art & Architecture Thesaurus <http://vocab.getty.edu/aat>`__. 
+    `The Art & Architecture Thesaurus <http://vocab.getty.edu/aat>/`__. 
     A vocabulary provided by the :term:`Getty`.
 
    TGN
-    `The Getty Thesaurus of Geographic Names <http://vocab.getty.edu/tgn>`__. 
+    `The Getty Thesaurus of Geographic Names <http://vocab.getty.edu/tgn/>`__. 
+    A vocabulary provided by the :term:`Getty`.
+
+   ULAN
+    `The Union List of Artist Names <http://vocab.getty.edu/ulan/>`__. 
     A vocabulary provided by the :term:`Getty`.

@@ -22,9 +22,9 @@ Installation
 ============
 
 To be able to use this library you need to have a modern version of Python 
-installed. Currently we're supporting versions 2.7, 3.3 and 3.4 of Python.
+installed.
 
-This easiest way to install this library is through pip or easy install:
+This easiest way to install this library is through pip.
 
 .. code-block:: bash    
     
@@ -36,11 +36,17 @@ depends on.
 Using the providers
 ===================
 
+A provider provides access to a single thesaurus or conceptscheme. You can 
+use the :class:`skosprovider_getty.providers.GettyProvider` directly
+by passing it a set of configuration options. Or you can use the more specific
+subclasses that come pre-configured with some of the configuration. For most
+users, this is the preferred method.
+
 Using AATProvider
 -----------------
 
 The :class:`~skosprovider_getty.providers.AATProvider` is a provider for 
-the :term:`AAT`. It's use is identical to all other SKOSProviders.
+the :term:`AAT`. Its use is identical to all other SKOSProviders.
 
 .. literalinclude:: ../../examples/churches.py
    :language: python
@@ -49,10 +55,20 @@ Using TGNProvider
 -----------------
 
 The :class:`~skosprovider_getty.providers.TGNProvider` is a provider for 
-the :term:`TGN`. It's use is identical to all other SKOSProviders.
+the :term:`TGN`. Its use is identical to all other SKOSProviders.
 
 .. literalinclude:: ../../examples/flanders.py
    :language: python
+
+Using ULANProvider
+------------------
+
+The :class:`~skosprovider_getty.providers.ULANProvider` is a provider for 
+the :term:`ULAN`. Its use is identical to all other SKOSProviders.
+
+.. literalinclude:: ../../examples/tolkien.py
+   :language: python
+
 
 Finding concepts or collections
 -------------------------------
