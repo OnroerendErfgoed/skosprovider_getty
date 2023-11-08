@@ -1,3 +1,10 @@
+1.2.0 (2023-11-08)
+------------------
+
+- Include the three Getty Conceptschemes in the code to make instantiating 
+  the providers less dependent on the Getty services being up and running. (#86)
+- Drop support for Python 3.8 and add support for 3.11
+
 1.1.0 (2022-08-17)
 ------------------
 
