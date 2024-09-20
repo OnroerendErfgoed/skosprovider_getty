@@ -33,7 +33,7 @@ dependencies = [
 History = "https://github.com/OnroerendErfgoed/skosprovider_getty/blob/master/CHANGES.rst"
 Tracker = "https://github.com/OnroerendErfgoed/skosprovider_getty/issues"
 Source = "https://github.com/OnroerendErfgoed/skosprovider_getty"
-Documentation = "https://skosprovider_getty.readthedocs.io/en/latest/"
+Documentation = "https://skosprovider-getty.readthedocs.io/en/latest/"
 
 [project.optional-dependencies]
 dev = [
