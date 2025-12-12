@@ -1,3 +1,10 @@
+1.3.0 (2025-12-12)
+------------------
+
+- Migrate to Github actions (#107)
+- Introduce new build tools (#104)
+- Upgrade skosprovider dependency
+
 1.2.0 (2023-11-08)
 ------------------
 
