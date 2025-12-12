@@ -25,6 +25,6 @@ linking your own vocabularies to the Getty thesauri and importing from them.
 
 Supported Getty thesauri:
 
-* `Art & Architecture Thesaurus (AAT) <http://vocab.getty.edu/aat>`_
-* `The Getty Thesaurus of Geographic Names (TGN) <http://vocab.getty.edu/tgn>`_
-* `Union List of Artist Names (ULAN) <http://vocab.getty.edu/ulan>`_
+* `Art & Architecture Thesaurus (AAT) <https://www.getty.edu/research/tools/vocabularies/aat/index.html>`_
+* `The Getty Thesaurus of Geographic Names (TGN) <https://www.getty.edu/research/tools/vocabularies/tgn/index.html>`_
+* `Union List of Artist Names (ULAN) <https://www.getty.edu/research/tools/vocabularies/ulan/index.html>`_
