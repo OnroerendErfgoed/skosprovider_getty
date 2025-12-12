@@ -11,7 +11,7 @@ authors = [
 ]
 license = "MIT"
 description = "Skosprovider implementation of the Getty Vocabularies"
-requires-python = ">=3.10,<3.13"
+requires-python = ">=3.10,<3.13.11"
 keywords = ["rdf", "skos", "skosprovider", "vocabularies", "thesauri"]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
@@ -22,11 +22,12 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
 ]
 dependencies = [
-    "requests==2.32.3",
-    "skosprovider==1.2.0",
-    "rdflib==6.3.2",
+    "requests>=2.32.3",
+    "skosprovider>=1.2.0",
+    "rdflib>=6.3.2,<7.0.0",
 ]
 
 [project.urls]
@@ -37,11 +38,11 @@ Documentation = "https://skosprovider-getty.readthedocs.io/en/latest/"
 
 [project.optional-dependencies]
 dev = [
-    "uv==0.4.1",
-    "pytest==8.3.3",
-    "pytest-cov==5.0.0",
-    "coveralls==4.0.1",
-    "sphinx==8.0.2",
+    "uv>=0.4.1",
+    "pytest>=8.3.3",
+    "pytest-cov>=5.0.0",
+    "coveralls>=4.0.2",
+    "sphinx>=8.0.2",
 ]
 
 ##
