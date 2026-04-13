@@ -5,7 +5,7 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 cd "$SCRIPT_DIR/.."
 
 BASE_PIP_COMPILE_ARGS="-q --no-header --strip-extras --resolver=backtracking --no-emit-options --no-emit-trusted-host --no-emit-find-links"
-PYTHON_VERSIONS="3.10 3.11 3.12 3.13.10"
+PYTHON_VERSIONS="3.11 3.12 3.13"
 
 for version in $PYTHON_VERSIONS; do
     PIP_COMPILE_ARGS="$BASE_PIP_COMPILE_ARGS --python-version ${version}"
