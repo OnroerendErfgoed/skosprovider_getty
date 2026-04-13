@@ -10,7 +10,6 @@ from skosprovider_getty.utils import uri_to_graph
 
 
 class TestUtils:
-
     def test_uri_to_graph(self):
         uri = 'http://vocab.getty.edu/aat/300007466.rdf'
         res = uri_to_graph(uri)
@@ -38,13 +37,17 @@ class TestUtils:
         assert SKOS.Concept in list_concept_subclasses
 
     def test_collect_subclasses_concept(self):
-        subclasses = SubClassCollector(rdflib.Namespace("http://vocab.getty.edu/ontology#"))
+        subclasses = SubClassCollector(
+            rdflib.Namespace('http://vocab.getty.edu/ontology#')
+        )
         list_concept_subclasses = subclasses.collect_subclasses(SKOS.Concept)
         assert len(list_concept_subclasses)
         assert SKOS.Concept in list_concept_subclasses
 
     def test_collect_subclasses_collection(self):
-        subclasses = SubClassCollector(rdflib.Namespace("http://vocab.getty.edu/ontology#"))
+        subclasses = SubClassCollector(
+            rdflib.Namespace('http://vocab.getty.edu/ontology#')
+        )
         list_concept_subclasses = subclasses.collect_subclasses(SKOS.Collection)
         assert len(list_concept_subclasses)
         assert SKOS.Collection in list_concept_subclasses

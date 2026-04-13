@@ -1,8 +1,7 @@
 #!/usr/bin/python
-'''
+"""
 This script demonstrates retrieving subclasses for a certain class.
-'''
-
+"""
 
 from skosprovider_getty.utils import SubClassCollector
 
