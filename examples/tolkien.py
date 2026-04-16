@@ -1,8 +1,8 @@
 #!/usr/bin/python
-'''
+"""
 This script demonstrates using the ULANProvider to get the concept of
 J.R.R. Tolkien.
-'''
+"""
 
 from skosprovider_getty.providers import ULANProvider
 

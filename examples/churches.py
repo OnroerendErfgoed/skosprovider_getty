@@ -1,8 +1,8 @@
 #!/usr/bin/python
-'''
+"""
 This script demonstrates using the AATProvider to get the concept of
 Churches.
-'''
+"""
 
 from skosprovider_getty.providers import AATProvider
 
