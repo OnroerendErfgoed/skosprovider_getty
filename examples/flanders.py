@@ -1,8 +1,8 @@
 #!/usr/bin/python
-'''
+"""
 This script demonstrates using the TGNProvider to get the concept of
 Flanders.
-'''
+"""
 
 from skosprovider_getty.providers import TGNProvider
 

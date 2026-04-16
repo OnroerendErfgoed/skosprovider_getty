@@ -1,6 +1,7 @@
-'''
+"""
 This module contains utility functions for :mod:`skosprovider_getty`.
-'''
+"""
+
 import logging
 
 import rdflib
@@ -29,12 +30,12 @@ GVP = rdflib.Namespace('http://vocab.getty.edu/ontology#')
 
 
 def conceptscheme_from_uri(conceptscheme_uri, **kwargs):
-    '''
+    """
     Read a SKOS Conceptscheme from a :term:`URI`
 
     :param string conceptscheme_uri: URI of the conceptscheme.
     :rtype: skosprovider.skos.ConceptScheme
-    '''
+    """
 
     # get the conceptscheme
     # ensure it only ends in one slash
@@ -46,14 +47,10 @@ def conceptscheme_from_uri(conceptscheme_uri, **kwargs):
     labels = []
     if graph is not False:
         for s, p, o in graph.triples((URIRef(conceptscheme_uri), RDFS.label, None)):
-            label = Label(o.toPython(), "prefLabel", 'en')
+            label = Label(o.toPython(), 'prefLabel', 'en')
             labels.append(label)
 
-    conceptscheme = ConceptScheme(
-        conceptscheme_uri,
-        labels=labels,
-        notes=notes
-    )
+    conceptscheme = ConceptScheme(conceptscheme_uri, labels=labels, notes=notes)
     return conceptscheme
 
 
@@ -79,13 +76,17 @@ def things_from_graph(graph, subclasses, conceptscheme, **kwargs):
             uri=uri,
             concept_scheme=conceptscheme,
             labels=_create_from_subject_typelist(graph, sub, valid_label_types),
-            notes=_create_from_subject_typelist(graph, sub, hierarchy_notetypes(Note.valid_types)),
+            notes=_create_from_subject_typelist(
+                graph, sub, hierarchy_notetypes(Note.valid_types)
+            ),
             sources=[],
             broader=_create_from_subject_predicate(graph, sub, SKOS.broader),
             narrower=_create_from_subject_predicate(graph, sub, SKOS.narrower),
             related=_create_from_subject_predicate(graph, sub, SKOS.related),
-            subordinate_arrays=_create_from_subject_predicate(graph, sub, ISO.subordinateArray),
-            matches=matches
+            subordinate_arrays=_create_from_subject_predicate(
+                graph, sub, ISO.subordinateArray
+            ),
+            matches=matches,
         )
         clist.append(con)
 
@@ -96,10 +97,12 @@ def things_from_graph(graph, subclasses, conceptscheme, **kwargs):
             uri=uri,
             concept_scheme=conceptscheme,
             labels=_create_from_subject_typelist(graph, sub, valid_label_types),
-            notes=_create_from_subject_typelist(graph, sub, hierarchy_notetypes(Note.valid_types)),
+            notes=_create_from_subject_typelist(
+                graph, sub, hierarchy_notetypes(Note.valid_types)
+            ),
             sources=[],
             members=_create_from_subject_predicate(graph, sub, SKOS.member),
-            superordinates=_get_super_ordinates(conceptscheme, sub, session=s)
+            superordinates=_get_super_ordinates(conceptscheme, sub, session=s),
         )
         clist.append(col)
 
@@ -119,12 +122,14 @@ def _get_super_ordinates(conceptscheme, sub, **kwargs):
     ret = []
     s = kwargs.get('session', requests.Session())
     query = """PREFIX ns:<{}>
-    SELECT * WHERE {{?s iso-thes:subordinateArray ns:{}}}""".format(conceptscheme.uri, uri_to_id(sub))
-    url = conceptscheme.uri.strip('/').rsplit('/', 1)[0] + "/sparql.json"
+    SELECT * WHERE {{?s iso-thes:subordinateArray ns:{}}}""".format(
+        conceptscheme.uri, uri_to_id(sub)
+    )
+    url = conceptscheme.uri.strip('/').rsplit('/', 1)[0] + '/sparql.json'
     res = do_get_request(url, s, params={'query': query})
     r = res.json()
-    for result in r["results"]["bindings"]:
-        ret.append(uri_to_id(result["s"]["value"]))
+    for result in r['results']['bindings']:
+        ret.append(uri_to_id(result['s']['value']))
     return ret
 
 
@@ -183,9 +188,9 @@ def _create_note(graph, uri, type, change_notes=False):
 
 
 class SubClassCollector:
-    '''
+    """
     A utility class to collect all the subclasses of a certain Class from an ontology file.
-    '''
+    """
 
     def __init__(self, namespace):
         self.ontology_graphs = {}
@@ -202,7 +207,7 @@ class SubClassCollector:
             GVP.AdminPlaceConcept,
             GVP.PersonConcept,
             GVP.UnknownPersonConcept,
-            GVP.GroupConcept
+            GVP.GroupConcept,
         ]
         self.subclasses[SKOS.Collection] = [
             SKOS.Collection,
@@ -210,32 +215,32 @@ class SubClassCollector:
             ISO.ThesaurusArray,
             GVP.Hierarchy,
             GVP.Facet,
-            GVP.GuideTerm
+            GVP.GuideTerm,
         ]
 
     def get_subclasses(self, clazz):
-        '''
+        """
         Get all registered subclasses for a class.
 
         :param clazz: An RDF class
         :return: A list of all subclasses, including the original class.
-        '''
+        """
         return self.subclasses[clazz]
 
     def collect_subclasses(self, clazz):
-        '''
+        """
         Collect all subclasses for a class and override the registered classes.
 
         Since this requires fetching ontology files, it might take a while.
 
         :param clazz: An RDF class
         :return: A list of all subclasses, including the original class.
-        '''
+        """
         self.subclasses[clazz] = [clazz]
         if self.namespace not in self.ontology_graphs:
             try:
                 graph = rdflib.Graph()
-                graph.parse(str(self.namespace), format="application/rdf+xml")
+                graph.parse(str(self.namespace), format='application/rdf+xml')
                 self.ontology_graphs[self.namespace] = graph
             except:  # pragma: no cover # noqa: E722
                 self.ontology_graphs[self.namespace] = None
@@ -246,13 +251,13 @@ class SubClassCollector:
         return self.subclasses[clazz]
 
     def _is_subclass_of(self, subject, clazz):
-        namespace = subject.split('#')[0] + "#"
+        namespace = subject.split('#')[0] + '#'
         if subject in self.subclasses[clazz]:
             return True
         if namespace not in self.ontology_graphs:
             try:
                 graph = rdflib.Graph()
-                graph.parse(str(namespace), format="application/rdf+xml")
+                graph.parse(str(namespace), format='application/rdf+xml')
                 self.ontology_graphs[namespace] = graph
             except:  # pragma: no cover # noqa: E722
                 self.ontology_graphs[namespace] = None
@@ -289,18 +294,18 @@ def uri_to_id(uri):
 
 
 def uri_to_graph(uri, **kwargs):
-    '''
+    """
     :param string uri: :term:`URI` where the RDF data can be found.
     :rtype: rdflib.Graph or `False` if the URI does not exist
     :raises skosprovider.exceptions.ProviderUnavailableException: if the
         getty.edu services are down
-    '''
+    """
     s = kwargs.get('session', requests.Session())
     graph = rdflib.Graph()
     res = do_get_request(uri, s)
     if res.status_code == 404:
         return False
-    graph.parse(data=res.content, format="application/rdf+xml")
+    graph.parse(data=res.content, format='application/rdf+xml')
     return graph
 
 
@@ -310,12 +315,17 @@ def do_get_request(url, session=None, headers=None, params=None):
     try:
         res = session.get(url, headers=headers, params=params)
     except ConnectionError:
-        raise ProviderUnavailableException(f"Request could not be executed due to connection issues- Request: {url}")
+        raise ProviderUnavailableException(
+            f'Request could not be executed due to connection issues- Request: {url}'
+        )
     except Timeout:  # pragma: no cover
-        raise ProviderUnavailableException(f"Request could not be executed due to timeout - Request: {url}")
+        raise ProviderUnavailableException(
+            f'Request could not be executed due to timeout - Request: {url}'
+        )
     if res.status_code >= 500:
         raise ProviderUnavailableException(
-            f"Request could not be executed due to server issues - Request: {url}. Response: {res.content}.")
+            f'Request could not be executed due to server issues - Request: {url}. Response: {res.content}.'
+        )
     if not res.encoding:
         res.encoding = 'utf-8'
     return res

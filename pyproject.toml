@@ -42,11 +42,23 @@ dev = [
     "pytest-cov>=5.0.0",
     "coveralls>=4.0.2",
     "sphinx>=8.0.2",
+    "pre-commit",
 ]
 
 ##
 # Build tool specific
 ##
+[tool.ruff]
+line-length = 90
+
+[tool.ruff.lint.isort]
+force-single-line = true
+force-sort-within-sections = true
+known-first-party = ["skosprovider_getty"]
+
+[tool.ruff.format]
+quote-style = "single"
+
 [tool.hatch.build.targets.wheel]
 # In the wheel we want to have skosprovider_getty in the root as python module.
 only-include = [

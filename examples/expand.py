@@ -1,7 +1,7 @@
 #!/usr/bin/python
-'''
+"""
 This script demonstrates using the AATProvider to expand a collection
-'''
+"""
 
 from skosprovider_getty.providers import AATProvider
 
