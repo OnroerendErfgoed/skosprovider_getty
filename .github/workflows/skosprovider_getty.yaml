@@ -1,12 +1,16 @@
 name: skosprovider_getty backend tests
 on:
-  push:
+  pull_request:
     paths:
       - skosprovider_getty/**
       - tests/**
-      - skosprovider_getty.yaml
+      - .github/workflows/skosprovider_getty.yaml
       - pyproject.toml
       - requirements*.txt
+
+  push:
+    branches:
+      - main
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -35,4 +39,14 @@ jobs:
           pip install -e .
 
       - name: Python tests
-        run: pytest tests --exitfirst --capture=no -vvv --full-trace
+        run: pytest --cov=skosprovider_getty --cov-report xml:${{ runner.temp }}/coverage.xml tests --exitfirst --capture=no -vvv --full-trace
+
+      - name: Get Cover
+        if: matrix.python-version == '3.11'
+        uses: orgoro/coverage@v3.2
+        with:
+          coverageFile: ${{ runner.temp }}/coverage.xml
+          token: ${{ secrets.GITHUB_TOKEN }}
+          thresholdAll: 0.8
+          thresholdNew: 0.9
+          thresholdModified: 0.8
